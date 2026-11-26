@@ -1,0 +1,9 @@
+services:
+  youbellkey-worker:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/worker.Dockerfile
+    env_file:
+      - ../../.env
+    restart: unless-stopped
+    shm_size: "1gb"

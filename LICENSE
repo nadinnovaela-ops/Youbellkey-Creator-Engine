@@ -1,0 +1,10 @@
+Copyright (c) 2026 Youbellkey. All rights reserved.
+
+This repository contains proprietary source code for Youbellkey Creator Engine
+(Youbellkey Studio). Unauthorized copying, redistribution, or commercial
+resale of this codebase without an explicit license grant from Youbellkey is
+prohibited.
+
+Third-party open-source dependencies, engines, and external CLI tools used
+by this project retain their respective licenses. See THIRD_PARTY_NOTICES.md
+and docs/LICENSE_POLICY.md for full attribution and boundary rules.

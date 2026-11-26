@@ -1,0 +1,33 @@
+{
+  "name": "youbellkey-creator-engine",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Youbellkey Studio — AI Content Operating System (Vercel + Supabase + Cloudflare R2 + HyperFrames Universal Worker)",
+  "license": "SEE LICENSE IN LICENSE",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "workspaces": [
+    "apps/*",
+    "workers/*",
+    "packages/*",
+    "engines/*"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json && npm run typecheck --workspaces --if-present",
+    "test": "vitest run",
+    "test:unit": "vitest run packages/",
+    "test:integration": "vitest run tests/integration/",
+    "test:security": "vitest run tests/security/",
+    "test:license": "npx tsx packages/license-registry/src/cli.ts --verify",
+    "sbom": "npx tsx packages/license-registry/src/cli.ts --write-notices",
+    "doctor:hyperframes": "npx tsx engines/hyperframes/src/doctor.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.0",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.2"
+  }
+}

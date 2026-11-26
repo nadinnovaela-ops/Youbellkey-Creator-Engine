@@ -1,0 +1,23 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "paths": {
+      "@youbellkey/shared-types": ["./packages/shared-types/src/index.ts"],
+      "@youbellkey/job-contracts": ["./packages/job-contracts/src/index.ts"],
+      "@youbellkey/video-schema": ["./packages/video-schema/src/index.ts"],
+      "@youbellkey/video-templates": ["./packages/video-templates/src/index.ts"],
+      "@youbellkey/ai-gateway": ["./packages/ai-gateway/src/index.ts"],
+      "@youbellkey/provider-adapters": ["./packages/provider-adapters/src/index.ts"],
+      "@youbellkey/originality-engine": ["./packages/originality-engine/src/index.ts"],
+      "@youbellkey/publishing-adapters": ["./packages/publishing-adapters/src/index.ts"],
+      "@youbellkey/storage": ["./packages/storage/src/index.ts"],
+      "@youbellkey/database": ["./packages/database/src/index.ts"],
+      "@youbellkey/license-registry": ["./packages/license-registry/src/index.ts"],
+      "@youbellkey/engine-hyperframes": ["./engines/hyperframes/src/index.ts"],
+      "@youbellkey/engine-threejs": ["./engines/threejs/src/index.ts"],
+      "@youbellkey/engine-ffmpeg": ["./engines/ffmpeg/src/index.ts"]
+    }
+  },
+  "include": ["tests/**/*.ts", "vitest.config.ts"]
+}
