@@ -280,7 +280,7 @@ export async function alignWordCaptionsWithGroqWhisper(options: {
       words?: Array<{ word?: string; start?: number; end?: number }>;
     };
 
-    const words = (json.words ?? [])
+    const rawWords = (json.words ?? [])
       .map((w) => {
         const word = (w.word ?? '').trim();
         const start = Math.max(0, Number(w.start ?? 0)) + offset;
@@ -292,6 +292,8 @@ export async function alignWordCaptionsWithGroqWhisper(options: {
         };
       })
       .filter((w) => w.word.length > 0);
+
+    const words = mergeContinuationWords(rawWords);
 
     if (words.length === 0) {
       return {
@@ -311,6 +313,37 @@ export async function alignWordCaptionsWithGroqWhisper(options: {
   }
 }
 
+/**
+ * Merges Whisper continuation fragments (hyphenated words, contractions, decimal/unit suffixes)
+ * inspired by OpenShorts' subtitle alignment heuristic so word pops never split numbers or hyphens.
+ */
+export function mergeContinuationWords(words: WordCaption[]): WordCaption[] {
+  const merged: WordCaption[] = [];
+  for (const current of words) {
+    const prev = merged[merged.length - 1];
+    if (!prev) {
+      merged.push({ ...current });
+      continue;
+    }
+
+    const gap = current.startSeconds - prev.endSeconds;
+    const prevEndsHyphen = /[-–]$/.test(prev.word);
+    const currStartsContinuation = /^['’.,%+\-–)]/.test(current.word);
+    const numericGroup = /^\d+$/.test(prev.word) && /^[.,]\d+%?$/.test(current.word);
+
+    if ((prevEndsHyphen || currStartsContinuation || numericGroup) && gap <= 0.12) {
+      const joined = prevEndsHyphen
+        ? `${prev.word}${current.word}`
+        : `${prev.word}${current.word}`;
+      prev.word = joined;
+      prev.endSeconds = Math.max(prev.endSeconds, current.endSeconds);
+    } else {
+      merged.push({ ...current });
+    }
+  }
+  return merged;
+}
+
 function escapeXml(str: string): string {
   return str
     .replace(/&/g, '&amp;')
@@ -321,43 +354,62 @@ function escapeXml(str: string): string {
 }
 
 /**
- * Generates an editorial SVG 9:16 artwork fallback when cloud image generation
- * quota is exhausted or unavailable, ensuring Jalur B stays deterministic.
+ * Generates a structured isometric/diorama editorial SVG 9:16 artwork fallback when cloud
+ * image generation quota is exhausted or unavailable, ensuring deterministic visual polish.
  */
 export function buildDeterministicEditorialSvg(prompt: string, sceneIndex: number): string {
-  const palettes: ReadonlyArray<readonly [string, string, string]> = [
-    ['#071426', '#0E7490', '#38BDF8'],
-    ['#1A102B', '#6D28D9', '#C084FC'],
-    ['#06221C', '#047857', '#34D399'],
-    ['#271111', '#B91C1C', '#FB923C'],
+  const palettes: ReadonlyArray<readonly [string, string, string, string]> = [
+    ['#0A192F', '#163554', '#38BDF8', '#EF4444'],
+    ['#18182F', '#2B2B52', '#A78BFA', '#F59E0B'],
+    ['#0D2420', '#1B4332', '#34D399', '#FBBF24'],
+    ['#261419', '#4A1F2B', '#FB7185', '#38BDF8'],
   ];
   const palette = palettes[sceneIndex % palettes.length] ?? palettes[0]!;
-  const [bg1, bg2, accent] = palette;
-  const label = escapeXml(prompt.slice(0, 72));
+  const [skyTop, skyBot, accent, highlight] = palette;
+  const label = escapeXml(prompt.slice(0, 64));
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1920" viewBox="0 0 1080 1920">
   <defs>
-    <linearGradient id="sky" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="${bg1}"/>
-      <stop offset="55%" stop-color="${bg2}"/>
-      <stop offset="100%" stop-color="#020617"/>
+    <linearGradient id="bgSky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${skyTop}"/>
+      <stop offset="65%" stop-color="${skyBot}"/>
+      <stop offset="100%" stop-color="#070B14"/>
     </linearGradient>
-    <radialGradient id="glow" cx="50%" cy="38%" r="48%">
-      <stop offset="0%" stop-color="${accent}" stop-opacity="0.45"/>
+    <radialGradient id="stageGlow" cx="50%" cy="54%" r="44%">
+      <stop offset="0%" stop-color="${accent}" stop-opacity="0.32"/>
       <stop offset="100%" stop-color="${accent}" stop-opacity="0"/>
     </radialGradient>
   </defs>
-  <rect width="1080" height="1920" fill="url(#sky)"/>
-  <circle cx="540" cy="720" r="520" fill="url(#glow)"/>
-  <g opacity="0.22" stroke="${accent}" stroke-width="2" fill="none">
-    <circle cx="540" cy="720" r="220"/>
-    <circle cx="540" cy="720" r="340" stroke-dasharray="14 10"/>
-    <circle cx="540" cy="720" r="460"/>
-    <path d="M120 1320 Q 540 1120 960 1320"/>
-    <path d="M120 1380 Q 540 1180 960 1380"/>
+  <rect width="1080" height="1920" fill="url(#bgSky)"/>
+  <circle cx="540" cy="1020" r="480" fill="url(#stageGlow)"/>
+  <!-- Isometric Diorama Slab -->
+  <g stroke="#0F172A" stroke-width="5" stroke-linejoin="round">
+    <polygon points="540,860 920,1040 540,1220 160,1040" fill="#1E293B"/>
+    <polygon points="160,1040 540,1220 540,1310 160,1130" fill="#0F172A"/>
+    <polygon points="920,1040 540,1220 540,1310 920,1130" fill="#334155"/>
+    <!-- Central Data Prism / Monument -->
+    <polygon points="540,600 660,655 540,710 420,655" fill="${accent}"/>
+    <polygon points="420,655 540,710 540,1040 420,985" fill="#0EA5E9" fill-opacity="0.72"/>
+    <polygon points="660,655 540,710 540,1040 660,985" fill="${accent}" fill-opacity="0.88"/>
+    <!-- Companion Blocks -->
+    <polygon points="310,820 390,858 310,896 230,858" fill="#E2E8F0"/>
+    <polygon points="230,858 310,896 310,1010 230,972" fill="#94A3B8"/>
+    <polygon points="390,858 310,896 310,1010 390,972" fill="#CBD5E1"/>
+    <polygon points="770,790 850,828 770,866 690,828" fill="#E2E8F0"/>
+    <polygon points="690,828 770,866 770,990 690,952" fill="#94A3B8"/>
+    <polygon points="850,828 770,866 770,990 850,952" fill="#CBD5E1"/>
   </g>
-  <text x="540" y="106" text-anchor="middle" fill="${accent}" font-family="sans-serif" font-size="22" opacity="0.35">${label}</text>
+  <!-- Editorial Scale Ruler -->
+  <g transform="translate(835, 560)">
+    <rect x="0" y="0" width="16" height="440" rx="4" fill="#FFFFFF" stroke="#0F172A" stroke-width="3"/>
+    <rect x="0" y="0" width="16" height="110" fill="${highlight}"/>
+    <rect x="0" y="220" width="16" height="110" fill="${highlight}"/>
+    <line x1="-14" y1="0" x2="26" y2="0" stroke="#FFFFFF" stroke-width="3"/>
+    <line x1="-14" y1="220" x2="26" y2="220" stroke="#FFFFFF" stroke-width="3"/>
+    <line x1="-14" y1="440" x2="26" y2="440" stroke="#FFFFFF" stroke-width="3"/>
+  </g>
+  <text x="540" y="138" text-anchor="middle" fill="${accent}" font-family="sans-serif" font-size="22" font-weight="700" opacity="0.48">${label}</text>
 </svg>`;
 }
 

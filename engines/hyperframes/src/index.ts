@@ -1,5 +1,6 @@
-import { execFile } from 'node:child_process';
+import { execFile, spawn } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
 
@@ -113,12 +114,34 @@ export async function lintHyperFramesProject(
   }
 }
 
+function chooseSafeWorkerCount(): number {
+  const freeMb = os.freemem() / (1024 * 1024);
+  const cpuCount = os.cpus().length;
+  // Each Chrome render worker needs ~260 MB; use 2 workers when memory headroom permits
+  if (cpuCount >= 4 && freeMb >= 1400) return 2;
+  return 1;
+}
+
+function terminateChildGroup(child: ReturnType<typeof spawn>, signal: NodeJS.Signals = 'SIGTERM'): void {
+  try {
+    if (process.platform !== 'win32' && child.pid) {
+      process.kill(-child.pid, signal);
+    } else {
+      child.kill(signal);
+    }
+  } catch {
+    // Ignore ESRCH if process already exited
+  }
+}
+
 export async function renderHyperFramesProject(options: {
   workDir: string;
   outputMp4Path: string;
   fps?: number;
   quality?: 'draft' | 'looks' | 'delivery';
+  expectedDurationSeconds?: number;
   repoRootDir?: string;
+  onFrameProgress?: (completedFrames: number, totalFrames: number) => void;
 }): Promise<{ stdout: string; stderr: string }> {
   const rootDir = options.repoRootDir ?? process.cwd();
   const binPath = resolveHyperFramesBinary(rootDir);
@@ -126,6 +149,7 @@ export async function renderHyperFramesProject(options: {
     throw new Error('hyperframes binary not found.');
   }
 
+  const workers = chooseSafeWorkerCount();
   const args = [
     'render',
     options.workDir,
@@ -135,14 +159,103 @@ export async function renderHyperFramesProject(options: {
     String(options.fps ?? 30),
     '--quality',
     options.quality ?? 'looks',
-    '--low-memory-mode',
+    '--workers',
+    String(workers),
+    '--protocol-timeout',
+    '300000',
   ];
 
-  const { stdout, stderr } = await execFileAsync(binPath, args, {
-    cwd: rootDir,
-    timeout: 300_000,
-    maxBuffer: 10 * 1024 * 1024,
-  });
+  // Low-memory mode prevents worker calibration crashes only on very constrained RAM
+  if (workers === 1) {
+    args.push('--low-memory-mode');
+  } else {
+    args.push('--no-low-memory-mode');
+  }
 
-  return { stdout, stderr };
+  const timeoutMs = Math.max(
+    480_000,
+    Math.min(1_800_000, Math.round((options.expectedDurationSeconds ?? 60) * 14_000)),
+  );
+
+  return new Promise((resolve, reject) => {
+    const child = spawn(binPath, args, {
+      cwd: rootDir,
+      stdio: ['ignore', 'pipe', 'pipe'],
+      detached: process.platform !== 'win32',
+      env: {
+        ...process.env,
+        HYPERFRAMES_NO_TELEMETRY: '1',
+      },
+    });
+
+    let stdout = '';
+    let stderr = '';
+    let stderrBuf = '';
+    let timedOut = false;
+
+    const killTimer = setTimeout(() => {
+      timedOut = true;
+      terminateChildGroup(child, 'SIGTERM');
+      setTimeout(() => terminateChildGroup(child, 'SIGKILL'), 5_000);
+    }, timeoutMs);
+
+    const parseTraceLine = (line: string) => {
+      const jsonIdx = line.indexOf('{');
+      if (jsonIdx < 0) return;
+      try {
+        const parsed = JSON.parse(line.slice(jsonIdx)) as {
+          framesCompleted?: number;
+          totalFrames?: number;
+        };
+        if (
+          typeof parsed.framesCompleted === 'number' &&
+          typeof parsed.totalFrames === 'number' &&
+          parsed.totalFrames > 0
+        ) {
+          options.onFrameProgress?.(parsed.framesCompleted, parsed.totalFrames);
+        }
+      } catch {
+        // Non-JSON log line
+      }
+    };
+
+    child.stdout?.on('data', (chunk: Buffer) => {
+      stdout += chunk.toString('utf8');
+      if (stdout.length > 2 * 1024 * 1024) stdout = stdout.slice(-1024 * 1024);
+    });
+
+    child.stderr?.on('data', (chunk: Buffer) => {
+      const text = chunk.toString('utf8');
+      stderr += text;
+      if (stderr.length > 2 * 1024 * 1024) stderr = stderr.slice(-1024 * 1024);
+
+      stderrBuf += text;
+      let nl = stderrBuf.indexOf('\n');
+      while (nl >= 0) {
+        const line = stderrBuf.slice(0, nl).trim();
+        stderrBuf = stderrBuf.slice(nl + 1);
+        parseTraceLine(line);
+        nl = stderrBuf.indexOf('\n');
+      }
+    });
+
+    child.on('error', (err) => {
+      clearTimeout(killTimer);
+      reject(err);
+    });
+
+    child.on('close', (code) => {
+      clearTimeout(killTimer);
+      if (stderrBuf.trim()) parseTraceLine(stderrBuf.trim());
+      if (timedOut) {
+        reject(new Error(`HyperFrames render timed out after ${Math.round(timeoutMs / 1000)}s.`));
+        return;
+      }
+      if (code !== 0) {
+        reject(new Error(`HyperFrames render exited with code ${code}: ${stderr.slice(-500) || stdout.slice(-500)}`));
+        return;
+      }
+      resolve({ stdout, stderr });
+    });
+  });
 }

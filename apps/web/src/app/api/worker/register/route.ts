@@ -47,6 +47,6 @@ export async function POST(request: Request) {
     workerId: worker.id,
     workspaceId: worker.workspace_id,
     heartbeatIntervalSeconds: 30,
-    leaseTtlSeconds: 120,
+    leaseTtlSeconds: 900,
   });
 }

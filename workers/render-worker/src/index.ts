@@ -193,12 +193,28 @@ export async function executeRenderPipeline(
 
     await options.onProgress?.(65, 'Merender frame video 1080x1920 via HyperFrames');
     const rawMp4Path = path.join(workDir, 'raw_render.mp4');
+    const expectedTotalDuration = computeTotalDurationSeconds(updatedDocument);
+    let lastPctReported = 65;
+    let lastReportTimeMs = 0;
+
     await renderHyperFramesProject({
       workDir,
       outputMp4Path: rawMp4Path,
       fps: updatedDocument.project.fps,
       quality: options.quality ?? 'looks',
+      expectedDurationSeconds: expectedTotalDuration,
       repoRootDir: options.repoRootDir,
+      onFrameProgress: (done, total) => {
+        const pct = Math.min(87, 65 + Math.round((done / Math.max(1, total)) * 22));
+        const now = Date.now();
+        if (pct >= lastPctReported + 2 || now - lastReportTimeMs >= 4000 || done >= total) {
+          lastPctReported = pct;
+          lastReportTimeMs = now;
+          void options.onProgress
+            ?.(pct, `Render frame ${done}/${total} (1080x1920)`)
+            .catch(() => undefined);
+        }
+      },
     });
 
     await options.onProgress?.(88, 'Normalisasi audio -14 LUFS & validasi akhir FFmpeg');

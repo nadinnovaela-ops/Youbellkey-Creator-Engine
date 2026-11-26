@@ -96,17 +96,8 @@ async function executeClaimedJob(
   config: WorkerRuntimeConfig,
   workerId: string,
   job: JobDispatch,
+  sendProgress: (progress: number, message: string) => Promise<void>,
 ): Promise<Record<string, unknown>> {
-  const sendProgress = async (progress: number, message: string) => {
-    const hb = await postWorkerJson<{ ok: boolean; killSwitchActive: boolean }>(
-      config,
-      '/api/worker/heartbeat',
-      { workerId, jobId: job.jobId, progress, message },
-    );
-    if (hb.killSwitchActive && job.jobType === 'PUBLISH_YOUTUBE_SHORTS') {
-      throw new Error('Aborted due to workspace kill switch.');
-    }
-  };
 
   if (job.jobType === 'PHASE1_SMOKE') {
     await sendProgress(25, 'Worker claimed smoke job');
@@ -423,15 +414,36 @@ export async function startWorkerLoop(config: WorkerRuntimeConfig): Promise<void
       }
 
       console.log(`[youbellkey-worker] Claimed job=${job.jobId} type=${job.jobType} attempt=${job.attemptCount}`);
+
+      // Render jobs can take 10–15 minutes (11 scenes × TTS + Chrome headless + FFmpeg).
+      // Use aggressive 15-second heartbeat so the 15-min rolling lease never expires.
+      const isHeavyJob = job.jobType === 'RENDER_HYPERFRAMES' || job.jobType === 'PUBLISH_YOUTUBE_SHORTS';
+      const heartbeatMs = isHeavyJob ? 15_000 : Math.max(10_000, reg.heartbeatIntervalSeconds * 1000);
+      let lastProgressForHeartbeat = 0;
+
       const heartbeatTimer = setInterval(() => {
         void postWorkerJson(config, '/api/worker/heartbeat', {
           workerId: reg!.workerId,
           jobId: job.jobId,
+          progress: lastProgressForHeartbeat,
         }).catch((err) => console.error('[youbellkey-worker] Heartbeat error:', err));
-      }, Math.max(10_000, reg.heartbeatIntervalSeconds * 1000));
+      }, heartbeatMs);
+
+      // Wrap sendProgress so heartbeat timer always knows latest progress
+      const origSendProgress = async (progress: number, message: string) => {
+        lastProgressForHeartbeat = progress;
+        const hb = await postWorkerJson<{ ok: boolean; killSwitchActive: boolean }>(
+          config,
+          '/api/worker/heartbeat',
+          { workerId: reg!.workerId, jobId: job.jobId, progress, message },
+        );
+        if (hb.killSwitchActive && job.jobType === 'PUBLISH_YOUTUBE_SHORTS') {
+          throw new Error('Aborted due to workspace kill switch.');
+        }
+      };
 
       try {
-        const result = await executeClaimedJob(config, reg.workerId, job);
+        const result = await executeClaimedJob(config, reg.workerId, job, origSendProgress);
         await postWorkerJson(config, '/api/worker/complete', {
           workerId: reg.workerId,
           jobId: job.jobId,

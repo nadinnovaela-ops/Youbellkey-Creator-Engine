@@ -27,6 +27,7 @@
   },
   "devDependencies": {
     "@types/node": "^25.0.0",
+    "givemotion": "^0.1.6",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vitest": "^5.1.2"

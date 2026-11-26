@@ -15,7 +15,7 @@ export async function POST(request: Request) {
 
   const admin = createSupabaseAdminClient();
   const nowIso = new Date().toISOString();
-  const newLeaseIso = new Date(Date.now() + 120 * 1000).toISOString();
+  const newLeaseIso = new Date(Date.now() + 900 * 1000).toISOString(); // 15-min rolling window
 
   await admin
     .from('workers')

@@ -19,7 +19,9 @@ export async function POST(request: Request) {
   const { data: claimedRows, error: claimError } = await admin.rpc('claim_next_job', {
     p_worker_id: worker.id,
     p_capabilities: parsed.data.capabilities,
-    p_lease_seconds: 120,
+    // Render jobs need longer lease (TTS × N scenes + Chrome headless + FFmpeg = up to 15 min)
+    // Heartbeat renewals keep this alive, but initial claim must be generous enough
+    p_lease_seconds: 900,
   });
 
   if (claimError) {
