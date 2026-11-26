@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@youbellkey/job-contracts": "*",
+    "@youbellkey/research-worker": "*",
     "@youbellkey/video-schema": "*"
   }
 }

@@ -16,7 +16,9 @@
       "@youbellkey/license-registry": ["./packages/license-registry/src/index.ts"],
       "@youbellkey/engine-hyperframes": ["./engines/hyperframes/src/index.ts"],
       "@youbellkey/engine-threejs": ["./engines/threejs/src/index.ts"],
-      "@youbellkey/engine-ffmpeg": ["./engines/ffmpeg/src/index.ts"]
+      "@youbellkey/engine-ffmpeg": ["./engines/ffmpeg/src/index.ts"],
+      "@youbellkey/research-worker": ["./workers/research-worker/src/index.ts"],
+      "@youbellkey/research-worker/core": ["./workers/research-worker/src/core.ts"]
     }
   },
   "include": ["tests/**/*.ts", "vitest.config.ts"]

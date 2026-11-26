@@ -31,10 +31,76 @@ export async function POST(request: Request) {
   const nowIso = new Date().toISOString();
 
   if (parsed.data.status === 'SUCCEEDED') {
+    const resultPayload = (parsed.data.result ?? {}) as Record<string, unknown>;
+
+    // Persist Phase 2 job outputs into workspace-scoped research tables.
+    if (job.job_type === 'RESEARCH_SYNC' && Array.isArray(resultPayload.discoveredItems)) {
+      const rowsToUpsert = resultPayload.discoveredItems
+        .filter((item): item is Record<string, unknown> => Boolean(item && typeof item === 'object'))
+        .map((item) => ({
+          workspace_id: worker.workspace_id,
+          source_id: typeof item.sourceId === 'string' ? item.sourceId : null,
+          external_video_id: String(item.externalVideoId ?? ''),
+          video_url: String(item.videoUrl ?? ''),
+          title: String(item.title ?? 'Untitled Video').slice(0, 200),
+          view_count: Number(item.viewCount ?? 0),
+          outlier_score: Number(item.outlierScore ?? 0),
+          growth_velocity: Number(item.growthVelocity ?? 0),
+          viral_score: Number(item.viralScore ?? 0),
+          metadata:
+            item.metadata && typeof item.metadata === 'object'
+              ? (item.metadata as Record<string, unknown>)
+              : {},
+        }))
+        .filter((row) => row.external_video_id.length > 0 && row.video_url.length > 0);
+
+      if (rowsToUpsert.length > 0) {
+        const { error: upsertErr } = await admin
+          .from('research_items')
+          .upsert(rowsToUpsert, { onConflict: 'workspace_id,external_video_id' });
+        if (upsertErr) {
+          return jsonError(500, 'RESEARCH_ITEMS_SAVE_FAILED', upsertErr.message);
+        }
+      }
+    }
+
+    if (job.job_type === 'REFERENCE_TRANSCRIPT') {
+      const researchItemId =
+        typeof resultPayload.researchItemId === 'string'
+          ? resultPayload.researchItemId
+          : typeof job.payload?.researchItemId === 'string'
+            ? job.payload.researchItemId
+            : null;
+      const transcriptText =
+        typeof resultPayload.transcriptText === 'string' ? resultPayload.transcriptText.trim() : '';
+
+      if (researchItemId && transcriptText) {
+        const { error: transcriptErr } = await admin
+          .from('research_items')
+          .update({
+            transcript_text: transcriptText,
+          })
+          .eq('id', researchItemId)
+          .eq('workspace_id', worker.workspace_id);
+        if (transcriptErr) {
+          return jsonError(500, 'TRANSCRIPT_SAVE_FAILED', transcriptErr.message);
+        }
+      }
+    }
+
     const nextStatus = job.job_type === 'PUBLISH_YOUTUBE_SHORTS' ? 'PUBLISHED' : 'APPROVED';
     const nextPayload = {
       ...(job.payload ?? {}),
-      lastResult: parsed.data.result ?? {},
+      lastResult:
+        job.job_type === 'RESEARCH_SYNC'
+          ? {
+              syncedSourcesCount: resultPayload.syncedSourcesCount ?? 0,
+              discoveredCount: Array.isArray(resultPayload.discoveredItems)
+                ? resultPayload.discoveredItems.length
+                : 0,
+              warnings: resultPayload.warnings ?? [],
+            }
+          : resultPayload,
       completedAt: nowIso,
     };
 

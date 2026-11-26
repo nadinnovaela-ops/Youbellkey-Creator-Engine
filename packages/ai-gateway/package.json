@@ -7,5 +7,10 @@
   "types": "./src/index.ts",
   "scripts": {
     "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@youbellkey/originality-engine": "*",
+    "@youbellkey/shared-types": "*",
+    "@youbellkey/video-schema": "*"
   }
 }

@@ -89,3 +89,51 @@ export const UpsertProviderCredentialRequestSchema = z.object({
 export const EnqueueSmokeJobRequestSchema = z.object({
   note: z.string().max(200).optional(),
 });
+
+// --- Phase 2: Viral Research & AI Content Lab Contracts ---
+
+export const CreateResearchSourceRequestSchema = z.object({
+  channelInput: z.string().min(3).max(300),
+  niche: z.string().min(2).max(100),
+  locale: z.enum(['id-ID', 'en-US']).default('id-ID'),
+  syncNow: z.boolean().default(true),
+});
+
+export const ToggleResearchSourceRequestSchema = z.object({
+  sourceId: z.string().uuid(),
+  isActive: z.boolean(),
+});
+
+export const AddResearchVideoUrlRequestSchema = z.object({
+  videoUrl: z.string().url().max(500),
+  title: z.string().min(1).max(200).optional(),
+  locale: z.enum(['id-ID', 'en-US']).default('id-ID'),
+  enqueueTranscript: z.boolean().default(true),
+});
+
+export const TriggerResearchSyncRequestSchema = z.object({
+  sourceId: z.string().uuid().optional(),
+  mode: z.enum(['worker', 'quick']).default('worker'),
+});
+
+export const RequestTranscriptJobSchema = z.object({
+  researchItemId: z.string().uuid(),
+  preferredLocale: z.enum(['id-ID', 'en-US']).optional(),
+});
+
+export const GenerateContentLabRequestSchema = z.object({
+  topic: z.string().min(3).max(1000).optional(),
+  researchItemId: z.string().uuid().optional(),
+  channelId: z.string().uuid().optional(),
+  locale: z.enum(['id-ID', 'en-US']).default('id-ID'),
+  videoTrack: z.enum(['MOTION_EXPLAINER', 'AI_STORYTELLING']).default('MOTION_EXPLAINER'),
+  variationCount: z.number().int().min(3).max(5).default(3),
+}).refine((v) => Boolean(v.topic?.trim() || v.researchItemId), {
+  message: 'Berikan topik/ide atau pilih researchItemId sebagai referensi.',
+});
+
+export const UpdateProjectDocumentRequestSchema = z.object({
+  title: z.string().min(1).max(120).optional(),
+  scriptText: z.string().min(1).max(20000).optional(),
+  ybVideoDoc: z.record(z.string(), z.unknown()),
+});

@@ -76,6 +76,62 @@ export interface JobRow {
   updated_at: string;
 }
 
+export interface ResearchSourceRow {
+  id: string;
+  workspace_id: string;
+  platform: string;
+  external_channel_id: string;
+  niche: string;
+  locale: 'id-ID' | 'en-US';
+  rss_url: string | null;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface ResearchItemRow {
+  id: string;
+  workspace_id: string;
+  source_id: string | null;
+  external_video_id: string;
+  video_url: string;
+  title: string;
+  view_count: number;
+  outlier_score: number;
+  growth_velocity: number;
+  viral_score: number;
+  transcript_text: string | null;
+  metadata: Record<string, unknown>;
+  discovered_at: string;
+}
+
+export interface ContentProjectRow {
+  id: string;
+  workspace_id: string;
+  channel_id: string | null;
+  source_item_id: string | null;
+  title: string;
+  locale: 'id-ID' | 'en-US';
+  video_track: 'MOTION_EXPLAINER' | 'AI_STORYTELLING';
+  script_text: string | null;
+  yb_video_doc: Record<string, unknown> | null;
+  originality_score: number | null;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CostLedgerRow {
+  id: string;
+  workspace_id: string;
+  job_id: string | null;
+  provider: string;
+  model: string;
+  input_units: number;
+  output_units: number;
+  estimated_cost_usd: number;
+  created_at: string;
+}
+
 /**
  * Server-only Supabase Service Role client.
  * Never invoke from client/browser code.
