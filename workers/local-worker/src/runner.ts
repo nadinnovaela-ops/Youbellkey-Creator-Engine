@@ -12,6 +12,17 @@ export interface WorkerRuntimeConfig {
   heartbeatIntervalMs: number;
 }
 
+export function stripSurroundingQuotes(raw: string): string {
+  const trimmed = raw.trim();
+  if (
+    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'"))
+  ) {
+    return trimmed.slice(1, -1);
+  }
+  return trimmed;
+}
+
 export function loadLocalEnvFile(cwd = process.cwd()): void {
   for (const filename of ['.env.local', '.env']) {
     const filePath = path.join(cwd, filename);
@@ -21,7 +32,7 @@ export function loadLocalEnvFile(cwd = process.cwd()): void {
       if (!line || line.startsWith('#') || !line.includes('=')) continue;
       const eq = line.indexOf('=');
       const key = line.slice(0, eq).trim();
-      const val = line.slice(eq + 1).trim();
+      const val = stripSurroundingQuotes(line.slice(eq + 1));
       if (key && !(key in process.env)) {
         process.env[key] = val;
       }
@@ -45,14 +56,22 @@ async function postWorkerJson<T>(
   endpoint: string,
   body: Record<string, unknown>,
 ): Promise<T> {
-  const res = await fetch(`${config.controlPlaneUrl}${endpoint}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${config.workerToken}`,
-    },
-    body: JSON.stringify(body),
-  });
+  const url = `${config.controlPlaneUrl}${endpoint}`;
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${config.workerToken}`,
+      },
+      body: JSON.stringify(body),
+    });
+  } catch (err) {
+    const cause = err instanceof Error && 'cause' in err ? String((err as { cause?: unknown }).cause) : '';
+    throw new Error(`Network error calling ${url}: ${err instanceof Error ? err.message : String(err)} ${cause}`.trim());
+  }
+
   const json = (await res.json()) as T & { error?: { message?: string } };
   if (!res.ok) {
     throw new Error(`${endpoint} failed (${res.status}): ${json?.error?.message ?? res.statusText}`);
@@ -102,22 +121,6 @@ export async function startWorkerLoop(config: WorkerRuntimeConfig): Promise<void
     throw new Error('Missing YB_WORKER_TOKEN. Run bash infrastructure/local/sync-env.sh or generate a token in Studio.');
   }
 
-  const platformArch = `${os.platform()}-${os.arch()}`;
-  const reg = await postWorkerJson<{
-    ok: boolean;
-    workerId: string;
-    workspaceId: string;
-    heartbeatIntervalSeconds: number;
-  }>(config, '/api/worker/register', {
-    workerName: config.workerName,
-    platformArch,
-    capabilities: config.capabilities,
-  });
-
-  console.log(
-    `[youbellkey-worker] Registered worker=${config.workerName} id=${reg.workerId} arch=${platformArch} controlPlane=${config.controlPlaneUrl}`,
-  );
-
   let stopping = false;
   const stop = () => {
     stopping = true;
@@ -125,6 +128,33 @@ export async function startWorkerLoop(config: WorkerRuntimeConfig): Promise<void
   };
   process.once('SIGINT', stop);
   process.once('SIGTERM', stop);
+
+  const platformArch = `${os.platform()}-${os.arch()}`;
+  let reg: { ok: boolean; workerId: string; workspaceId: string; heartbeatIntervalSeconds: number } | null = null;
+  let retryDelayMs = 5000;
+
+  while (!stopping && !reg) {
+    try {
+      reg = await postWorkerJson(config, '/api/worker/register', {
+        workerName: config.workerName,
+        platformArch,
+        capabilities: config.capabilities,
+      });
+    } catch (err) {
+      console.error(
+        `[youbellkey-worker] Register retry in ${retryDelayMs / 1000}s:`,
+        err instanceof Error ? err.message : err,
+      );
+      await sleep(retryDelayMs);
+      retryDelayMs = Math.min(30_000, retryDelayMs * 2);
+    }
+  }
+
+  if (!reg) return;
+
+  console.log(
+    `[youbellkey-worker] Registered worker=${config.workerName} id=${reg.workerId} arch=${platformArch} controlPlane=${config.controlPlaneUrl}`,
+  );
 
   while (!stopping) {
     try {
@@ -141,7 +171,7 @@ export async function startWorkerLoop(config: WorkerRuntimeConfig): Promise<void
       console.log(`[youbellkey-worker] Claimed job=${job.jobId} type=${job.jobType} attempt=${job.attemptCount}`);
       const heartbeatTimer = setInterval(() => {
         void postWorkerJson(config, '/api/worker/heartbeat', {
-          workerId: reg.workerId,
+          workerId: reg!.workerId,
           jobId: job.jobId,
         }).catch((err) => console.error('[youbellkey-worker] Heartbeat error:', err));
       }, Math.max(10_000, reg.heartbeatIntervalSeconds * 1000));

@@ -117,7 +117,9 @@ ensure_defaults_and_secrets() {
   if is_placeholder "$(get_env_val "NEXT_PUBLIC_APP_URL")"; then
     set_env_val "NEXT_PUBLIC_APP_URL" "$PROD_URL"
   fi
-  if is_placeholder "$(get_env_val "YB_CONTROL_PLANE_URL")"; then
+  local cp_url
+  cp_url="$(get_env_val "YB_CONTROL_PLANE_URL")"
+  if is_placeholder "$cp_url" || [[ "$cp_url" == "http://localhost:3000" ]]; then
     set_env_val "YB_CONTROL_PLANE_URL" "$PROD_URL"
   fi
   if is_placeholder "$(get_env_val "R2_BUCKET_NAME")"; then

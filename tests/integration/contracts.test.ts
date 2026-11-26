@@ -11,7 +11,7 @@ import { buildWorkspaceR2Key, isR2Configured, readR2ConfigFromEnv } from '@yoube
 import { YBVideoDocumentSchema, computeTotalDurationSeconds } from '@youbellkey/video-schema';
 import { V1_TEMPLATE_REGISTRY } from '@youbellkey/video-templates';
 import { isWorkerRecentlyActive } from '../../apps/web/src/lib/http.js';
-import { createDefaultWorkerConfig } from '../../workers/local-worker/src/index.js';
+import { createDefaultWorkerConfig, stripSurroundingQuotes } from '../../workers/local-worker/src/index.js';
 import { checkShortsAutopilotReadiness } from '../../workers/publish-worker/src/index.js';
 import { validateAndSummarizeRenderPlan } from '../../workers/render-worker/src/index.js';
 import { buildYoutubeChannelRssUrl, computeViralScore } from '../../workers/research-worker/src/index.js';
@@ -212,6 +212,8 @@ describe('Phase 0 Core Contracts', () => {
       YB_WORKER_TOKEN: 'tok_123456',
     });
     expect(workerCfg.controlPlaneUrl).toBe('https://youbellkey-creator-engine.vercel.app');
+    expect(stripSurroundingQuotes('"ybw_abc123"')).toBe('ybw_abc123');
+    expect(stripSurroundingQuotes("'ybw_abc123'")).toBe('ybw_abc123');
     expect(isWorkerRecentlyActive(new Date().toISOString())).toBe(true);
     expect(isWorkerRecentlyActive(new Date(Date.now() - 120_000).toISOString())).toBe(false);
   });
