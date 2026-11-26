@@ -1,4 +1,5 @@
 import type { WorkspaceRow } from '@youbellkey/database';
+import { createSupabaseAdminClient } from '@youbellkey/database';
 import { createSupabaseServerClient } from './supabase-server';
 
 export interface AuthenticatedContext {
@@ -9,6 +10,7 @@ export interface AuthenticatedContext {
 }
 
 export async function getAuthenticatedWorkspace(): Promise<AuthenticatedContext | null> {
+  // 1. Verify user identity via SSR anon client (reads cookies / JWT)
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -19,9 +21,15 @@ export async function getAuthenticatedWorkspace(): Promise<AuthenticatedContext 
     return null;
   }
 
-  const { data: existingWorkspaces, error: listError } = await supabase
+  // 2. Use ADMIN client for all DB workspace operations (bypasses RLS).
+  //    This is safe because we already authenticated the user above.
+  //    Manual tenant filter: .eq('owner_user_id', user.id)
+  const admin = createSupabaseAdminClient();
+
+  const { data: existingWorkspaces, error: listError } = await admin
     .from('workspaces')
     .select('*')
+    .eq('owner_user_id', user.id)
     .order('created_at', { ascending: true })
     .limit(1);
 
@@ -38,8 +46,8 @@ export async function getAuthenticatedWorkspace(): Promise<AuthenticatedContext 
     };
   }
 
-  // Provision initial personal workspace on first sign-in.
-  const { data: created, error: createError } = await supabase
+  // 3. Auto-provision personal workspace on first sign-in (admin client, server-trusted).
+  const { data: created, error: createError } = await admin
     .from('workspaces')
     .insert({
       owner_user_id: user.id,
