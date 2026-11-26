@@ -22,7 +22,8 @@
     "test:security": "vitest run tests/security/",
     "test:license": "npx tsx packages/license-registry/src/cli.ts --verify",
     "sbom": "npx tsx packages/license-registry/src/cli.ts --write-notices",
-    "doctor:hyperframes": "npx tsx engines/hyperframes/src/doctor.ts"
+    "doctor:hyperframes": "npx tsx engines/hyperframes/src/doctor.ts",
+    "worker:local": "npx tsx workers/local-worker/src/cli.ts"
   },
   "devDependencies": {
     "@types/node": "^25.0.0",

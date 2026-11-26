@@ -42,3 +42,14 @@ export function decryptSecret(payload: string, masterKeyHex: string): string {
 export function hashWorkerToken(rawToken: string): string {
   return crypto.createHash('sha256').update(rawToken, 'utf8').digest('hex');
 }
+
+export function timingSafeEqualHex(hexA: string, hexB: string): boolean {
+  if (hexA.length !== hexB.length || hexA.length === 0) return false;
+  return crypto.timingSafeEqual(Buffer.from(hexA, 'utf8'), Buffer.from(hexB, 'utf8'));
+}
+
+export function maskSecretPreview(secret: string): string {
+  const trimmed = secret.trim();
+  if (trimmed.length <= 8) return '****';
+  return `${trimmed.slice(0, 4)}...${trimmed.slice(-4)}`;
+}

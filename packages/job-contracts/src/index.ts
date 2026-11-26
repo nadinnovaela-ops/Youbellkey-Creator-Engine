@@ -17,6 +17,7 @@ export const WorkerCapabilitySchema = z.enum(['render', 'research', 'publish']);
 export type WorkerCapability = z.infer<typeof WorkerCapabilitySchema>;
 
 export const JobTypeSchema = z.enum([
+  'PHASE1_SMOKE',
   'RESEARCH_SYNC',
   'REFERENCE_TRANSCRIPT',
   'GENERATE_TTS_AND_CAPTIONS',
@@ -63,3 +64,28 @@ export const JobDispatchSchema = z.object({
   payload: z.record(z.string(), z.unknown()),
 });
 export type JobDispatch = z.infer<typeof JobDispatchSchema>;
+
+export const ToggleKillSwitchRequestSchema = z.object({
+  killSwitchActive: z.boolean(),
+});
+
+export const CreateChannelRequestSchema = z.object({
+  platform: z.enum(['youtube_shorts', 'instagram_reels', 'facebook_reels']).default('youtube_shorts'),
+  externalChannelId: z.string().min(2).max(120),
+  title: z.string().min(1).max(120),
+  locale: z.enum(['id-ID', 'en-US']).default('id-ID'),
+  timezone: z.string().min(2).max(80).default('Asia/Jakarta'),
+  workflowMode: z.enum(['AUTOPILOT', 'MANUAL_REVIEW']).default('AUTOPILOT'),
+  dailyPublishCap: z.number().int().min(1).max(25).default(3),
+  autopilotEnabled: z.boolean().default(true),
+});
+
+export const UpsertProviderCredentialRequestSchema = z.object({
+  provider: z.string().min(2).max(60),
+  label: z.string().min(1).max(80),
+  apiKey: z.string().min(6).max(512),
+});
+
+export const EnqueueSmokeJobRequestSchema = z.object({
+  note: z.string().max(200).optional(),
+});

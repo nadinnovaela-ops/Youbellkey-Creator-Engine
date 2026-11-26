@@ -1,11 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { JobDispatchSchema } from '@youbellkey/job-contracts';
+import {
+  CreateChannelRequestSchema,
+  JobDispatchSchema,
+  UpsertProviderCredentialRequestSchema,
+} from '@youbellkey/job-contracts';
 import { evaluateOriginality } from '@youbellkey/originality-engine';
 import { listCommercialSafeProviders } from '@youbellkey/provider-adapters';
 import { evaluateAutopilotGuardrails } from '@youbellkey/publishing-adapters';
-import { buildWorkspaceR2Key } from '@youbellkey/storage';
+import { buildWorkspaceR2Key, isR2Configured, readR2ConfigFromEnv } from '@youbellkey/storage';
 import { YBVideoDocumentSchema, computeTotalDurationSeconds } from '@youbellkey/video-schema';
 import { V1_TEMPLATE_REGISTRY } from '@youbellkey/video-templates';
+import { isWorkerRecentlyActive } from '../../apps/web/src/lib/http.js';
+import { createDefaultWorkerConfig } from '../../workers/local-worker/src/index.js';
 import { checkShortsAutopilotReadiness } from '../../workers/publish-worker/src/index.js';
 import { validateAndSummarizeRenderPlan } from '../../workers/render-worker/src/index.js';
 import { buildYoutubeChannelRssUrl, computeViralScore } from '../../workers/research-worker/src/index.js';
@@ -173,5 +179,40 @@ describe('Phase 0 Core Contracts', () => {
     const commercialSafe = listCommercialSafeProviders().map((p) => p.id);
     expect(commercialSafe).not.toContain('edge-tts-personal');
     expect(commercialSafe).toContain('groq-whisper-free');
+  });
+
+  it('validates Phase 1 channel, credential, worker config, and R2 readiness contracts', () => {
+    const channel = CreateChannelRequestSchema.parse({
+      externalChannelId: 'UC_TEST_CHANNEL',
+      title: 'Fakta Sains ID',
+      locale: 'id-ID',
+      timezone: 'Asia/Jakarta',
+      workflowMode: 'AUTOPILOT',
+    });
+    expect(channel.dailyPublishCap).toBe(3);
+
+    const cred = UpsertProviderCredentialRequestSchema.parse({
+      provider: 'gemini-free',
+      label: 'Gemini Key',
+      apiKey: 'AIzaSyFakeKeyValue123456',
+    });
+    expect(cred.provider).toBe('gemini-free');
+
+    expect(isR2Configured({})).toBe(false);
+    expect(
+      readR2ConfigFromEnv({
+        R2_ACCOUNT_ID: 'acct-1',
+        R2_ACCESS_KEY_ID: 'key-1',
+        R2_SECRET_ACCESS_KEY: 'secret-1',
+      })?.bucketName,
+    ).toBe('youbellkey-media');
+
+    const workerCfg = createDefaultWorkerConfig({
+      YB_CONTROL_PLANE_URL: 'https://youbellkey-creator-engine.vercel.app/',
+      YB_WORKER_TOKEN: 'tok_123456',
+    });
+    expect(workerCfg.controlPlaneUrl).toBe('https://youbellkey-creator-engine.vercel.app');
+    expect(isWorkerRecentlyActive(new Date().toISOString())).toBe(true);
+    expect(isWorkerRecentlyActive(new Date(Date.now() - 120_000).toISOString())).toBe(false);
   });
 });

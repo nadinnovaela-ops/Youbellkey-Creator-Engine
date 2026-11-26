@@ -7,5 +7,9 @@
   "types": "./src/index.ts",
   "scripts": {
     "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@youbellkey/job-contracts": "*",
+    "@youbellkey/video-schema": "*"
   }
 }
