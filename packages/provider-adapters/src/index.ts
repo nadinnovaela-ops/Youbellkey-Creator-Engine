@@ -37,6 +37,15 @@ export const REGISTERED_PROVIDERS: ProviderCapabilitySpec[] = [
     notes: 'Free API tier without credit card for word-level subtitle timestamps.',
   },
   {
+    id: 'gemini-tts',
+    displayName: 'Google Gemini Flash TTS (Native Audio)',
+    category: 'tts',
+    hasFreeTier: true,
+    requiresBillingVerification: false,
+    commercialSafe: true,
+    notes: '24kHz PCM voiceover directly from Gemini API key for ID & EN.',
+  },
+  {
     id: 'google-cloud-tts',
     displayName: 'Google Cloud Text-to-Speech',
     category: 'tts',

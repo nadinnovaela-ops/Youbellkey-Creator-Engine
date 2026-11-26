@@ -90,6 +90,7 @@ export function StudioDashboard({ initialData }: { initialData: StudioOverviewPa
   const [editingTitle, setEditingTitle] = useState('');
   const [editingScript, setEditingScript] = useState('');
   const [editingDocJson, setEditingDocJson] = useState('');
+  const [previewVideo, setPreviewVideo] = useState<{ projectId: string; title: string; url: string } | null>(null);
 
   const refreshOverview = useCallback(async () => {
     try {
@@ -367,6 +368,83 @@ export function StudioDashboard({ initialData }: { initialData: StudioOverviewPa
     }
   }
 
+  async function triggerProjectRender(projectId: string) {
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const res = await fetch(`/api/studio/projects/${projectId}/render`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ quality: 'looks' }),
+      });
+      const json = (await res.json()) as { ok?: boolean; job?: { id: string }; error?: { message?: string } };
+      if (!res.ok || !json.ok) throw new Error(json.error?.message ?? 'Gagal antrekan render');
+      setNotice(
+        `Job RENDER_HYPERFRAMES (${json.job?.id.slice(0, 8)}) masuk antrean. Worker lokal akan merender MP4 1080×1920 + subtitle kata.`,
+      );
+      await refreshOverview();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function openProjectPreview(project: StudioOverviewPayload['projects'][number]) {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/studio/projects/${project.id}/preview`, { cache: 'no-store' });
+      const json = (await res.json()) as {
+        ok?: boolean;
+        hasCloudPreview?: boolean;
+        downloadUrl?: string | null;
+        message?: string;
+        error?: { message?: string };
+      };
+      if (!res.ok || !json.ok) throw new Error(json.error?.message ?? 'Gagal memuat preview video');
+      if (!json.hasCloudPreview || !json.downloadUrl) {
+        setNotice(json.message ?? 'Video tersimpan lokal di ~/.youbellkey/renders/ pada PC worker (R2 belum aktif).');
+        return;
+      }
+      setPreviewVideo({ projectId: project.id, title: project.title, url: json.downloadUrl });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function triggerProjectPublish(project: StudioOverviewPayload['projects'][number]) {
+    const channelIdToUse = project.channelId || labChannelId || data.channels[0]?.id;
+    if (!channelIdToUse) {
+      setError('Tambahkan atau pilih Channel YouTube terlebih dahulu sebelum publikasi.');
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const res = await fetch(`/api/studio/projects/${project.id}/publish`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          channelId: channelIdToUse,
+          privacyStatus: 'private',
+        }),
+      });
+      const json = (await res.json()) as { ok?: boolean; job?: { id: string }; error?: { message?: string } };
+      if (!res.ok || !json.ok) throw new Error(json.error?.message ?? 'Gagal menjadwalkan publikasi');
+      setNotice(`Job PUBLISH_YOUTUBE_SHORTS (${json.job?.id.slice(0, 8)}) masuk antrean Worker.`);
+      await refreshOverview();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function createWorkerToken(e: FormEvent) {
     e.preventDefault();
     setBusy(true);
@@ -462,7 +540,7 @@ export function StudioDashboard({ initialData }: { initialData: StudioOverviewPa
       <header style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
         <div>
           <span style={{ fontSize: 11, color: '#38BDF8', fontWeight: 700, letterSpacing: 0.8 }}>
-            YOUBELLKEY STUDIO · PHASE 2 ACTIVE
+            YOUBELLKEY STUDIO · PHASE 3 VIDEO FACTORY ACTIVE
           </span>
           <h1 style={{ margin: '2px 0', fontSize: '1.35rem' }}>{data.workspace.name}</h1>
           <span style={{ fontSize: 12, color: '#94A3B8' }}>{data.userEmail}</span>
@@ -876,6 +954,31 @@ export function StudioDashboard({ initialData }: { initialData: StudioOverviewPa
             </form>
           </div>
 
+          {/* Inline MP4 Preview Player (Cloudflare R2 Presigned URL) */}
+          {previewVideo && (
+            <div style={{ ...cardStyle, borderColor: '#10B981', display: 'grid', gap: 10 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <strong style={{ fontSize: 15 }}>Preview MP4 9:16 — {previewVideo.title}</strong>
+                <button type="button" onClick={() => setPreviewVideo(null)} style={btnSecondary}>
+                  Tutup Video
+                </button>
+              </div>
+              <video
+                src={previewVideo.url}
+                controls
+                playsInline
+                style={{
+                  width: '100%',
+                  maxWidth: 340,
+                  aspectRatio: '9 / 16',
+                  borderRadius: 12,
+                  background: '#000000',
+                  justifySelf: 'center',
+                }}
+              />
+            </div>
+          )}
+
           {/* Inline YB Video Document JSON Editor */}
           {editingProjectId && (
             <form onSubmit={saveEditedDocument} style={{ ...cardStyle, borderColor: '#38BDF8', display: 'grid', gap: 10 }}>
@@ -973,7 +1076,45 @@ export function StudioDashboard({ initialData }: { initialData: StudioOverviewPa
                           ))}
                         </div>
                       )}
-                      <div style={{ display: 'flex', gap: 8 }}>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => void triggerProjectRender(proj.id)}
+                          style={btnPrimary}
+                        >
+                          Render Video 9:16 (Worker)
+                        </button>
+                        {proj.hasR2Asset && (
+                          <button
+                            type="button"
+                            disabled={busy}
+                            onClick={() => void openProjectPreview(proj)}
+                            style={{ ...btnSecondary, borderColor: '#10B981', color: '#6EE7B7' }}
+                          >
+                            Putar Preview MP4
+                          </button>
+                        )}
+                        {proj.status === 'RENDERED' && !proj.publishedVideoId && (
+                          <button
+                            type="button"
+                            disabled={busy}
+                            onClick={() => void triggerProjectPublish(proj)}
+                            style={{ ...btnSecondary, borderColor: '#38BDF8', color: '#7DD3FC' }}
+                          >
+                            Upload YouTube (Private Test)
+                          </button>
+                        )}
+                        {proj.publishedVideoId && (
+                          <a
+                            href={`https://youtube.com/shorts/${proj.publishedVideoId}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{ ...btnSecondary, borderColor: '#34D399', color: '#6EE7B7', textDecoration: 'none' }}
+                          >
+                            Lihat YouTube Short ✓
+                          </a>
+                        )}
                         <button type="button" onClick={() => startEditingProject(proj)} style={btnSecondary}>
                           Edit YB Video Document JSON
                         </button>

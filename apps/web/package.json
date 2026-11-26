@@ -17,6 +17,7 @@
     "@youbellkey/job-contracts": "*",
     "@youbellkey/originality-engine": "*",
     "@youbellkey/provider-adapters": "*",
+    "@youbellkey/publishing-adapters": "*",
     "@youbellkey/research-worker": "*",
     "@youbellkey/shared-types": "*",
     "@youbellkey/storage": "*",

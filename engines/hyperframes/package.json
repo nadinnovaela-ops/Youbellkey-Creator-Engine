@@ -9,6 +9,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@youbellkey/engine-threejs": "*",
+    "@youbellkey/video-schema": "*",
+    "@youbellkey/video-templates": "*",
     "hyperframes": "^0.9.98"
   }
 }

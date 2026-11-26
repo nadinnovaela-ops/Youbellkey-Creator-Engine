@@ -103,6 +103,8 @@ export interface StudioOverviewPayload {
     ybVideoDoc: Record<string, unknown> | null;
     originalityScore: number | null;
     status: string;
+    hasR2Asset: boolean;
+    publishedVideoId: string | null;
     createdAt: string;
     updatedAt: string;
   }>;
@@ -111,7 +113,7 @@ export interface StudioOverviewPayload {
 export async function loadStudioOverview(ctx: AuthenticatedContext): Promise<StudioOverviewPayload> {
   const { supabase, workspace } = ctx;
 
-  const [channelsRes, workersRes, providersRes, jobsRes, sourcesRes, itemsRes, projectsRes] =
+  const [channelsRes, workersRes, providersRes, jobsRes, sourcesRes, itemsRes, projectsRes, assetsRes, pubsRes] =
     await Promise.all([
       supabase
         .from('channels')
@@ -152,6 +154,15 @@ export async function loadStudioOverview(ctx: AuthenticatedContext): Promise<Stu
         .eq('workspace_id', workspace.id)
         .order('updated_at', { ascending: false })
         .limit(25),
+      supabase
+        .from('media_assets')
+        .select('project_id')
+        .eq('workspace_id', workspace.id)
+        .eq('asset_type', 'render-mp4'),
+      supabase
+        .from('publications')
+        .select('project_id, external_video_id, status')
+        .eq('workspace_id', workspace.id),
     ]);
 
   const channels = ((channelsRes.data ?? []) as ChannelRow[]).map((c) => ({
@@ -231,6 +242,22 @@ export async function loadStudioOverview(ctx: AuthenticatedContext): Promise<Stu
     discoveredAt: item.discovered_at,
   }));
 
+  const assetProjectIds = new Set(
+    ((assetsRes.data ?? []) as Array<{ project_id: string | null }>)
+      .map((a) => a.project_id)
+      .filter((id): id is string => Boolean(id)),
+  );
+  const pubMap = new Map<string, string>();
+  for (const pub of (pubsRes.data ?? []) as Array<{
+    project_id: string;
+    external_video_id: string | null;
+    status: string;
+  }>) {
+    if (pub.status === 'PUBLISHED' && pub.external_video_id) {
+      pubMap.set(pub.project_id, pub.external_video_id);
+    }
+  }
+
   const projects = ((projectsRes.data ?? []) as ContentProjectRow[]).map((p) => ({
     id: p.id,
     channelId: p.channel_id,
@@ -242,6 +269,8 @@ export async function loadStudioOverview(ctx: AuthenticatedContext): Promise<Stu
     ybVideoDoc: p.yb_video_doc,
     originalityScore: p.originality_score === null ? null : Number(p.originality_score),
     status: p.status,
+    hasR2Asset: assetProjectIds.has(p.id),
+    publishedVideoId: pubMap.get(p.id) ?? null,
     createdAt: p.created_at,
     updatedAt: p.updated_at,
   }));

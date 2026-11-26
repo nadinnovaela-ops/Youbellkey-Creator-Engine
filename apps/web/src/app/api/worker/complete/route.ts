@@ -33,7 +33,7 @@ export async function POST(request: Request) {
   if (parsed.data.status === 'SUCCEEDED') {
     const resultPayload = (parsed.data.result ?? {}) as Record<string, unknown>;
 
-    // Persist Phase 2 job outputs into workspace-scoped research tables.
+    // Persist Phase 2: RESEARCH_SYNC
     if (job.job_type === 'RESEARCH_SYNC' && Array.isArray(resultPayload.discoveredItems)) {
       const rowsToUpsert = resultPayload.discoveredItems
         .filter((item): item is Record<string, unknown> => Boolean(item && typeof item === 'object'))
@@ -64,6 +64,7 @@ export async function POST(request: Request) {
       }
     }
 
+    // Persist Phase 2: REFERENCE_TRANSCRIPT
     if (job.job_type === 'REFERENCE_TRANSCRIPT') {
       const researchItemId =
         typeof resultPayload.researchItemId === 'string'
@@ -85,6 +86,78 @@ export async function POST(request: Request) {
         if (transcriptErr) {
           return jsonError(500, 'TRANSCRIPT_SAVE_FAILED', transcriptErr.message);
         }
+      }
+    }
+
+    // Persist Phase 3: RENDER_HYPERFRAMES
+    if (job.job_type === 'RENDER_HYPERFRAMES') {
+      const projectId =
+        typeof resultPayload.projectId === 'string' ? resultPayload.projectId : job.project_id;
+      const updatedDoc =
+        resultPayload.updatedDocument && typeof resultPayload.updatedDocument === 'object'
+          ? (resultPayload.updatedDocument as Record<string, unknown>)
+          : null;
+
+      if (projectId) {
+        await admin
+          .from('content_projects')
+          .update({
+            ...(updatedDoc ? { yb_video_doc: updatedDoc } : {}),
+            status: 'RENDERED',
+            updated_at: nowIso,
+          })
+          .eq('id', projectId)
+          .eq('workspace_id', worker.workspace_id);
+      }
+
+      const r2Key = typeof resultPayload.r2Key === 'string' ? resultPayload.r2Key.trim() : '';
+      const mediaProbe = (resultPayload.mediaProbe ?? {}) as { sizeBytes?: number };
+      if (projectId && r2Key) {
+        const expiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+        await admin.from('media_assets').insert({
+          workspace_id: worker.workspace_id,
+          project_id: projectId,
+          asset_type: 'render-mp4',
+          r2_key: r2Key,
+          mime_type: 'video/mp4',
+          size_bytes: Number(mediaProbe.sizeBytes ?? 0),
+          expires_at: expiresAt,
+        });
+      }
+    }
+
+    // Persist Phase 4: PUBLISH_YOUTUBE_SHORTS
+    if (job.job_type === 'PUBLISH_YOUTUBE_SHORTS') {
+      const projectId =
+        typeof resultPayload.projectId === 'string' ? resultPayload.projectId : job.project_id;
+      const publicationId =
+        typeof resultPayload.publicationId === 'string'
+          ? resultPayload.publicationId
+          : typeof job.payload?.publicationId === 'string'
+            ? job.payload.publicationId
+            : null;
+      const externalVideoId =
+        typeof resultPayload.externalVideoId === 'string' ? resultPayload.externalVideoId : null;
+
+      if (publicationId) {
+        await admin
+          .from('publications')
+          .update({
+            status: 'PUBLISHED',
+            external_video_id: externalVideoId,
+            publish_at: typeof resultPayload.publishAt === 'string' ? resultPayload.publishAt : null,
+            updated_at: nowIso,
+          })
+          .eq('id', publicationId)
+          .eq('workspace_id', worker.workspace_id);
+      }
+
+      if (projectId) {
+        await admin
+          .from('content_projects')
+          .update({ status: 'PUBLISHED', updated_at: nowIso })
+          .eq('id', projectId)
+          .eq('workspace_id', worker.workspace_id);
       }
     }
 
@@ -135,6 +208,17 @@ export async function POST(request: Request) {
 
     if (failError) {
       return jsonError(500, 'JOB_FAIL_UPDATE_FAILED', failError.message);
+    }
+
+    if (job.job_type === 'PUBLISH_YOUTUBE_SHORTS' && nextStatus === 'FAILED') {
+      const publicationId = typeof job.payload?.publicationId === 'string' ? job.payload.publicationId : null;
+      if (publicationId) {
+        await admin
+          .from('publications')
+          .update({ status: 'FAILED', updated_at: nowIso })
+          .eq('id', publicationId)
+          .eq('workspace_id', worker.workspace_id);
+      }
     }
   }
 

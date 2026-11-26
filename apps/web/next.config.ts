@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
     '@youbellkey/shared-types',
     '@youbellkey/job-contracts',
     '@youbellkey/provider-adapters',
+    '@youbellkey/publishing-adapters',
     '@youbellkey/ai-gateway',
     '@youbellkey/originality-engine',
     '@youbellkey/research-worker',

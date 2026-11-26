@@ -137,3 +137,30 @@ export const UpdateProjectDocumentRequestSchema = z.object({
   scriptText: z.string().min(1).max(20000).optional(),
   ybVideoDoc: z.record(z.string(), z.unknown()),
 });
+
+// --- Phase 3 & 4: Video Factory & Autopilot Publishing Contracts ---
+
+export const TriggerProjectRenderRequestSchema = z.object({
+  quality: z.enum(['draft', 'looks', 'delivery']).default('looks'),
+});
+
+export const WorkerPresignRenderUploadSchema = z.object({
+  workerId: z.string().uuid(),
+  jobId: z.string().uuid(),
+  projectId: z.string().uuid(),
+  filename: z.string().min(1).max(160).default('final.mp4'),
+  contentType: z.string().min(3).max(120).default('video/mp4'),
+});
+
+export const TriggerProjectPublishRequestSchema = z.object({
+  channelId: z.string().uuid().optional(),
+  publishAt: z.string().datetime().optional(),
+  privacyStatus: z.enum(['private', 'unlisted', 'public']).default('public'),
+  tags: z.array(z.string().max(50)).max(20).optional(),
+});
+
+export const WorkerPublishTokenRequestSchema = z.object({
+  workerId: z.string().uuid(),
+  jobId: z.string().uuid(),
+  channelId: z.string().uuid(),
+});

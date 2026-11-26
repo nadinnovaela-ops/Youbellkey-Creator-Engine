@@ -7,5 +7,13 @@
   "types": "./src/index.ts",
   "scripts": {
     "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@youbellkey/ai-gateway": "*",
+    "@youbellkey/engine-ffmpeg": "*",
+    "@youbellkey/engine-hyperframes": "*",
+    "@youbellkey/publishing-adapters": "*",
+    "@youbellkey/video-schema": "*",
+    "@youbellkey/video-templates": "*"
   }
 }

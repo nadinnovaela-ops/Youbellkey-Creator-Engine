@@ -8,6 +8,7 @@
       "@youbellkey/video-schema": ["./packages/video-schema/src/index.ts"],
       "@youbellkey/video-templates": ["./packages/video-templates/src/index.ts"],
       "@youbellkey/ai-gateway": ["./packages/ai-gateway/src/index.ts"],
+      "@youbellkey/ai-gateway/tts": ["./packages/ai-gateway/src/tts.ts"],
       "@youbellkey/provider-adapters": ["./packages/provider-adapters/src/index.ts"],
       "@youbellkey/originality-engine": ["./packages/originality-engine/src/index.ts"],
       "@youbellkey/publishing-adapters": ["./packages/publishing-adapters/src/index.ts"],
@@ -18,7 +19,8 @@
       "@youbellkey/engine-threejs": ["./engines/threejs/src/index.ts"],
       "@youbellkey/engine-ffmpeg": ["./engines/ffmpeg/src/index.ts"],
       "@youbellkey/research-worker": ["./workers/research-worker/src/index.ts"],
-      "@youbellkey/research-worker/core": ["./workers/research-worker/src/core.ts"]
+      "@youbellkey/research-worker/core": ["./workers/research-worker/src/core.ts"],
+      "@youbellkey/render-worker": ["./workers/render-worker/src/index.ts"]
     }
   },
   "include": ["tests/**/*.ts", "vitest.config.ts"]

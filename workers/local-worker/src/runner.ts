@@ -1,7 +1,10 @@
 import fs from 'node:fs';
+import fsp from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import type { JobDispatch, WorkerCapability } from '@youbellkey/job-contracts';
+import { publishYoutubeShortFromWorker } from '@youbellkey/publish-worker';
+import { executeRenderPipeline } from '@youbellkey/render-worker';
 import {
   extractReferenceTranscript,
   fetchYoutubeChannelRssFeed,
@@ -205,7 +208,166 @@ async function executeClaimedJob(
     };
   }
 
-  throw new Error(`Job type ${job.jobType} will be implemented in Phase 3-4.`);
+  if (job.jobType === 'RENDER_HYPERFRAMES') {
+    const projectId = String(job.payload.projectId ?? job.projectId ?? job.jobId);
+    const quality =
+      job.payload.quality === 'draft' || job.payload.quality === 'delivery' || job.payload.quality === 'looks'
+        ? job.payload.quality
+        : 'looks';
+    const rendersRoot = path.join(os.homedir(), '.youbellkey', 'renders');
+    const localOutputPath = path.join(rendersRoot, `${projectId}.mp4`);
+
+    const renderRes = await executeRenderPipeline({
+      document: job.payload.document,
+      outputPath: localOutputPath,
+      quality,
+      repoRootDir: process.cwd(),
+      providerKeys: {
+        geminiApiKey: process.env.GEMINI_API_KEY,
+        groqApiKey: process.env.GROQ_API_KEY,
+        googleCloudTtsApiKey: process.env.GOOGLE_CLOUD_TTS_API_KEY,
+      },
+      onProgress: sendProgress,
+    });
+
+    let r2Key: string | null = null;
+    const presign = await postWorkerJson<{
+      ok: boolean;
+      r2Configured: boolean;
+      r2Key: string | null;
+      uploadUrl: string | null;
+    }>(config, '/api/worker/presign-render-upload', {
+      workerId,
+      jobId: job.jobId,
+      projectId,
+      filename: `${projectId}.mp4`,
+      contentType: 'video/mp4',
+    });
+
+    if (presign.r2Configured && presign.uploadUrl && presign.r2Key) {
+      await sendProgress(94, 'Mengunggah MP4 ke Cloudflare R2');
+      const mp4Bytes = await fsp.readFile(localOutputPath);
+      const putRes = await fetch(presign.uploadUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'video/mp4' },
+        body: new Blob([new Uint8Array(mp4Bytes)], { type: 'video/mp4' }),
+      });
+      if (!putRes.ok) {
+        throw new Error(`Cloudflare R2 upload failed (${putRes.status})`);
+      }
+      r2Key = presign.r2Key;
+    }
+
+    await sendProgress(100, r2Key ? 'Render & upload R2 selesai' : 'Render lokal selesai');
+    return {
+      projectId,
+      r2Key,
+      localOutputPath,
+      updatedDocument: renderRes.updatedDocument,
+      mediaProbe: renderRes.mediaProbe,
+      qualityGate: renderRes.qualityGate,
+      ttsProviders: renderRes.ttsProviders,
+      whisperAlignedScenes: renderRes.whisperAlignedScenes,
+      warnings: renderRes.warnings,
+    };
+  }
+
+  if (job.jobType === 'PUBLISH_YOUTUBE_SHORTS') {
+    const channelId = typeof job.payload.channelId === 'string' ? job.payload.channelId : '';
+    const projectId = String(job.payload.projectId ?? job.projectId ?? '');
+    if (!channelId || !projectId) {
+      throw new Error('Payload PUBLISH_YOUTUBE_SHORTS memerlukan channelId dan projectId.');
+    }
+
+    await sendProgress(15, 'Meminta short-lived OAuth access token dari Control Plane');
+    const broker = await postWorkerJson<{
+      ok: boolean;
+      accessToken: string;
+      downloadUrl: string | null;
+      channelGuardrails: {
+        publishedTodayCount: number;
+        dailyPublishCap: number;
+        autopilotEnabled: boolean;
+      };
+      idempotencyKey: string;
+      alreadyPublishedWithKey: boolean;
+    }>(config, '/api/worker/publish-token', {
+      workerId,
+      jobId: job.jobId,
+      channelId,
+    });
+
+    let videoBytes: Uint8Array | null = null;
+    if (broker.downloadUrl) {
+      await sendProgress(35, 'Mengunduh MP4 tervalidasi dari Cloudflare R2');
+      const dlRes = await fetch(broker.downloadUrl);
+      if (!dlRes.ok) throw new Error(`Gagal mengunduh MP4 dari R2 (${dlRes.status})`);
+      videoBytes = new Uint8Array(await dlRes.arrayBuffer());
+    } else {
+      const localPath = path.join(os.homedir(), '.youbellkey', 'renders', `${projectId}.mp4`);
+      if (fs.existsSync(localPath)) {
+        videoBytes = new Uint8Array(await fsp.readFile(localPath));
+      }
+    }
+
+    if (!videoBytes) {
+      throw new Error('File MP4 hasil render tidak ditemukan di R2 maupun di lokal worker.');
+    }
+
+    await sendProgress(55, 'Mengunggah ke YouTube Shorts (Resumable Upload)...');
+    const mediaMeta = (job.payload.mediaProbe ?? {}) as {
+      width?: number;
+      height?: number;
+      durationSeconds?: number;
+      hasAudioTrack?: boolean;
+      audioPeakDb?: number;
+      captionsCount?: number;
+    };
+
+    const uploadResult = await publishYoutubeShortFromWorker({
+      accessToken: broker.accessToken,
+      videoBytes,
+      guardrailsInput: {
+        workspaceKillSwitchActive: false,
+        channelAutopilotEnabled: broker.channelGuardrails.autopilotEnabled,
+        publishedTodayCount: broker.channelGuardrails.publishedTodayCount,
+        dailyPublishCap: broker.channelGuardrails.dailyPublishCap,
+        idempotencyKey: broker.idempotencyKey,
+        alreadyPublishedWithKey: broker.alreadyPublishedWithKey,
+        width: Number(mediaMeta.width ?? 1080),
+        height: Number(mediaMeta.height ?? 1920),
+        durationSeconds: Number(mediaMeta.durationSeconds ?? 15),
+        hasAudioTrack: Boolean(mediaMeta.hasAudioTrack ?? true),
+        audioPeakDb: Number(mediaMeta.audioPeakDb ?? -14),
+        captionsCount: Number(mediaMeta.captionsCount ?? 10),
+      },
+      metadata: {
+        title: String(job.payload.title ?? 'Youbellkey Short'),
+        description: String(job.payload.description ?? ''),
+        tags: Array.isArray(job.payload.tags) ? (job.payload.tags as string[]) : undefined,
+        privacyStatus:
+          job.payload.privacyStatus === 'private' ||
+          job.payload.privacyStatus === 'unlisted' ||
+          job.payload.privacyStatus === 'public'
+            ? job.payload.privacyStatus
+            : 'public',
+        publishAtIso: typeof job.payload.publishAt === 'string' ? job.payload.publishAt : undefined,
+        defaultLanguage: job.payload.locale === 'en-US' ? 'en' : 'id',
+      },
+    });
+
+    await sendProgress(100, `Terupload ke YouTube (${uploadResult.externalVideoId})`);
+    return {
+      projectId,
+      channelId,
+      publicationId: job.payload.publicationId ?? null,
+      externalVideoId: uploadResult.externalVideoId,
+      privacyStatus: uploadResult.privacyStatus,
+      publishAt: uploadResult.publishAt,
+    };
+  }
+
+  throw new Error(`Job type ${job.jobType} tidak dikenal.`);
 }
 
 export async function startWorkerLoop(config: WorkerRuntimeConfig): Promise<void> {
