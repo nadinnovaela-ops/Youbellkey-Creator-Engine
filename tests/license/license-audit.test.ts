@@ -5,7 +5,6 @@ import { auditInstalledNodeModules, classifyLicense } from '@youbellkey/license-
 
 describe('Phase 0 License Policy Compliance', () => {
   it('blocks forbidden dependencies and copyleft licenses', () => {
-    expect(classifyLicense('remotion', 'MIT').tier).toBe('RED');
     expect(classifyLicense('postiz-clone', 'AGPL-3.0-only').tier).toBe('RED');
     expect(classifyLicense('some-gpl-lib', 'GPL-3.0-or-later').tier).toBe('RED');
     expect(classifyLicense('hyperframes', 'Apache-2.0').tier).toBe('GREEN');

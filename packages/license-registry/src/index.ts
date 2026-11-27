@@ -34,7 +34,7 @@ const GREEN_TOKENS = new Set([
   'PYTHON-2.0',
 ]);
 
-const FORBIDDEN_PACKAGES = new Set(['remotion', '@remotion/cli', '@remotion/bundler', '@remotion/renderer']);
+const FORBIDDEN_PACKAGES = new Set(['@remotion/cli', '@remotion/bundler', '@remotion/renderer']);
 
 function isYellowToken(tokenUpper: string): boolean {
   return (

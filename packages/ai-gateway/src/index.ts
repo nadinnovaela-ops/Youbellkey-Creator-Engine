@@ -780,8 +780,8 @@ export async function generateContentVariations(
 
   const languageDirective =
     input.locale === 'id-ID'
-      ? 'WAJIB menulis seluruh title, hookText, scriptText, dan voiceover.text dalam Bahasa Indonesia yang alami, tajam, ritmis, dan cocok untuk YouTube Shorts Indonesia. Jangan meniru kalimat referensi kata demi kata.'
-      : 'Write all title, hookText, scriptText, and voiceover.text in crisp, natural US/global English suited for YouTube Shorts. Never copy source lines verbatim.';
+      ? 'WAJIB menulis seluruh title, hookText, scriptText, dan voiceover.text dalam Bahasa Indonesia yang alami, tajam, ritmis, dan sangat informatif (gaya edutainment). Masukkan detail spesifik (nama tempat, tokoh, fakta unik) untuk topik budaya/sejarah seperti "Batu Menangis Kalimantan" atau legenda lainnya. Jangan gunakan bahasa yang kaku atau formal.'
+      : 'Write all title, hookText, scriptText, and voiceover.text in crisp, natural, highly informative edutainment style English. Include specific details (names, locations, unique facts) for cultural/historical topics. Avoid generic or overly formal language.';
 
   const trackDirective =
     input.videoTrack === 'AI_STORYTELLING'
@@ -789,12 +789,14 @@ export async function generateContentVariations(
       : 'Scenes must use code-driven templates ("kinetic-typography" or "data-threejs-explainer") with backgroundLayer kind "typography", "threejs" (preset "orbital-particles" | "floating-cards" | "data-bars-3d"), or "chart".';
 
   const systemPrompt = [
-    'You are Youbellkey Video Director & Originality Scriptwriter for 9:16 vertical YouTube Shorts (1080x1920, 30fps).',
+    'You are Youbellkey Video Director & Lead Researcher for high-retention 9:16 vertical YouTube Shorts (1080x1920, 30fps).',
+    'Goal: Transform any topic into a compelling 11-scene mini-documentary that creates a "Curiosity Gap" in the first 3 seconds.',
     languageDirective,
     trackDirective,
-    `Generate exactly ${count} DISTINCT variations. Each variation MUST have 10-11 scenes: scene_01_hook (3-4s hook), scene_02 through scene_09 (body scenes 7-10s each — rich layered explanations with examples and comparisons; for MOTION_EXPLAINER alternate between typography/threejs/chart layers), scene_10_recap (5-6s summary), scene_11_cta (4-5s call-to-action). Total video duration MUST be 60-100 seconds. Each variation must use a completely distinct opening hook angle.`,
+    'RESEARCH INSTRUCTION: Even if no reference transcript is provided, use your internal knowledge to provide specific factual details, historical context, and cultural nuances. For example, if the topic is "Batu Menangis", mention West Kalimantan (Kalimantan Barat), the specific narrative of the daughter and widow, and the moral takeaway.',
+    `Generate exactly ${count} DISTINCT variations. Each variation MUST have 11 scenes: scene_01_hook (3-4s mystery/fact hook), scene_02 through scene_09 (body scenes 7-10s each — deep dive with specific examples; for MOTION_EXPLAINER alternate between typography/threejs/chart layers), scene_10_recap (5-6s emotional/logical recap), scene_11_cta (4-5s high-energy call-to-action).`,
     'Respond ONLY with a valid JSON object of this exact shape (no markdown, no extra keys):',
-    '{"variations":[{"angle":"myth-busting","title":"...","hookText":"...","scenes":[{"id":"scene_01_hook","durationSeconds":4,"backgroundLayer":{"kind":"typography","headline":"...","accentColor":"#38BDF8"},"voiceover":{"text":"..."}},{"id":"scene_02_body1","durationSeconds":8,"backgroundLayer":{"kind":"threejs","preset":"orbital-particles","params":{}},"voiceover":{"text":"..."}},{"id":"scene_11_cta","durationSeconds":5,"backgroundLayer":{"kind":"typography","headline":"...","accentColor":"#34D399"},"voiceover":{"text":"..."}}]}]}',
+    '{"variations":[{"angle":"deep-history","title":"...","hookText":"...","scenes":[{"id":"scene_01_hook","durationSeconds":4,"backgroundLayer":{"kind":"typography","headline":"...","accentColor":"#38BDF8"},"voiceover":{"text":"..."}},{"id":"scene_02_body1","durationSeconds":8,"backgroundLayer":{"kind":"threejs","preset":"orbital-particles","params":{}},"voiceover":{"text":"..."}},{"id":"scene_11_cta","durationSeconds":5,"backgroundLayer":{"kind":"typography","headline":"...","accentColor":"#34D399"},"voiceover":{"text":"..."}}]}]}',
   ].join('\n');
 
   const userPrompt = [
