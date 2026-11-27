@@ -159,3 +159,14 @@ File ini berfungsi sebagai **buku tamu / logbook karyawan** proyek. Setiap aktiv
 - Status: selesai
 - Catatan tambahan: Error "Too small: expected number to be >=3" telah diperbaiki. Tab Content Lab sekarang dapat membuat 1 video tunggal dari ide tanpa error validasi. visualStyle dan captionStyle disimpan ke YB Video Document project section. threeJsPreset diterima oleh schema dan diteruskan ke pipeline render.
 
+## Entri 16
+
+## [27-11-2026 17:35:00 WIB] - Model: Kilo - Sesi: fix-content-lab-research-connection
+- Mulai: [27-11-2026 17:35:00 WIB] | Selesai: [27-11-2026 17:45:00 WIB]
+- Instruksi/Percakapan: User melaporkan naskah "batu menangis di kalimantan" kurang riset. Penyebab: tab Content Lab baru tidak terhubung ke riset yang ada (data.researchItems), `createResearchItemId` belum digunakan di `generateFromCreateIdea`.
+- File yang diedit: `apps/web/src/components/StudioDashboard.tsx`
+- Aksi yang dilakukan: (1) Menambahkan state `createResearchItemId` di `StudioDashboard`. (2) Menambahkan selector dropdown `researchItems` ke form Content Lab (di bawah textarea topik). (3) Memperbarui handler `generateFromCreateIdea` untuk mengirim `createResearchItemId` ke endpoint `/api/studio/projects/generate`.
+- Verifikasi: npm run typecheck (EXIT 0 semua workspace), npm run test (23/23 lulus).
+- Status: selesai
+- Catatan tambahan: Tab Content Lab kini memungkinkan pemilihan item riset yang sudah ada (mis. "Batu Menangis") sebagai referensi naskah, sehingga naskah yang dihasilkan lebih akurat sesuai data riset. Selector ditambahkan di UI Content Lab.
+

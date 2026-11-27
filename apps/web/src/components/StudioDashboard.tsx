@@ -90,6 +90,7 @@ export function StudioDashboard({ initialData }: { initialData: StudioOverviewPa
 
   // Phase 2: Content Lab (Ide → Video) states
   const [createTopic, setCreateTopic] = useState('');
+  const [createResearchItemId, setCreateResearchItemId] = useState('');
   const [createLocale, setCreateLocale] = useState<'id-ID' | 'en-US'>('id-ID');
   const [createTrack, setCreateTrack] = useState<'MOTION_EXPLAINER' | 'AI_STORYTELLING'>('MOTION_EXPLAINER');
   const [createVisualStyle, setCreateVisualStyle] = useState<VisualStyleId>('editorial-clean');
@@ -371,7 +372,7 @@ export function StudioDashboard({ initialData }: { initialData: StudioOverviewPa
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           topic: createTopic.trim() || undefined,
-          researchItemId: undefined,
+          researchItemId: createResearchItemId || undefined,
           channelId: undefined,
           locale: createLocale,
           videoTrack: createTrack,
@@ -1047,6 +1048,19 @@ export function StudioDashboard({ initialData }: { initialData: StudioOverviewPa
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 8 }}>
                 <select
+                  value={createResearchItemId}
+                  onChange={(e) => setCreateResearchItemId(e.target.value)}
+                  style={inputStyle}
+                >
+                  <option value="">-- Referensi Riset (Opsional, mis. Batu Menangis) --</option>
+                  {data.researchItems.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      Ref: {item.title.slice(0, 48)} {item.hasTranscript ? '(Transkrip ✓)' : ''}
+                    </option>
+                  ))}
+                </select>
+
+                <select
                   value={createLocale}
                   onChange={(e) => setCreateLocale(e.target.value as 'id-ID' | 'en-US')}
                   style={inputStyle}
@@ -1528,4 +1542,5 @@ export function StudioDashboard({ initialData }: { initialData: StudioOverviewPa
 }
 
 /* ## Riwayat Pengerjakan (Work History)
-- [27-11-2026 17:10:00 WIB] Model: Kilo | Sesi: reorganisasi-studio-dashboard | Aksi: Tambah tab 'create' (Content Lab — Buat Video dari Ide) dengan selector 34 visual look, 10 caption style, 17 Three.js preset; rename tab 'lab' → 'Content Lab Recreate'; tambah handler generateFromCreateIdea; impor VISUAL_LOOKS_CATALOG/CAPTION_STYLE_PRESETS dari @youbellkey/video-templates, ThreeJsPresetEnum/VisualStyleId/CaptionStyleId dari @youbellkey/video-schema | File: apps/web/src/components/StudioDashboard.tsx | Status: selesai */
+- [27-11-2026 17:10:00 WIB] Model: Kilo | Sesi: reorganisasi-studio-dashboard | Aksi: Tambah tab 'create' (Content Lab — Buat Video dari Ide) dengan selector 34 visual look, 10 caption style, 17 Three.js preset; rename tab 'lab' → 'Content Lab Recreate'; tambah handler generateFromCreateIdea; impor VISUAL_LOOKS_CATALOG/CAPTION_STYLE_PRESETS dari @youbellkey/video-templates, ThreeJsPresetEnum/VisualStyleId/CaptionStyleId dari @youbellkey/video-schema | File: apps/web/src/components/StudioDashboard.tsx | Status: selesai
+- [27-11-2026 17:45:00 WIB] Model: Kilo | Sesi: fix-content-lab-research-connection | Aksi: Tambah state createResearchItemId, selector researchItems di form Content Lab, dan update generateFromCreateIdea untuk mengirim researchItemId ke API generate | File: apps/web/src/components/StudioDashboard.tsx | Status: selesai */
