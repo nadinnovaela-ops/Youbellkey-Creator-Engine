@@ -137,3 +137,14 @@ File ini berfungsi sebagai **buku tamu / logbook karyawan** proyek. Setiap aktiv
 - Status: selesai
 - Catatan tambahan: Semua 34 visual look dan 17 Three.js preset terdefinisi dengan lengkap. Remotion hanya opsional (optionalDependencies) dan tidak masuk dalam bundle inti. Fase ini menyelesaikan kebutuhan 30+ visual looks dan 8+ Three.js preset dari rencana.
 
+## Entri 14
+
+## [27-11-2026 16:50:00 WIB] - Model: Kilo - Sesi: reorganisasi-studio-dashboard
+- Mulai: [27-11-2026 16:50:00 WIB] | Selesai: [27-11-2026 17:10:00 WIB]
+- Instruksi/Percakapan: User melaporkan 34 visual look dan 17 Three.js preset tidak muncul di Studio Dashboard. Dashboard perlu direorganisasi: tab baru untuk pembuatan video dari ide saja (Content Lab), tab content lab diganti jadi "Content Lab Recreate" untuk membangun ulang video lain, viral research jadi bagian dari re-creating. Tambah selector visual style, caption style, dan Three.js preset ke tab baru.
+- File yang diedit: `apps/web/src/components/StudioDashboard.tsx` (tambah tab 'create', rename 'lab' jadi 'Content Lab Recreate', tambah generateFromCreateIdea handler, impor VISUAL_LOOKS_CATALOG/CAPTION_STYLE_PRESETS/VisualStyleId/CaptionStyleId/ThreeJsPresetEnum, tambah selector 34 visual look + 10 caption style + 17 Three.js preset)
+- Aksi yang dilakukan: (1) TabId diperluas dengan 'create'. (2) Nav label diubah: 'lab' → 'Content Lab Recreate', ditambahkan 'create' → 'Content Lab (Ide → Video)'. (3) Tab baru 'create': textarea ide tunggal (mis. "buatkan saya video sejarah indonesia"), selector locale/track/visualStyle/captionStyle/threeJsPreset, handler generateFromCreateIdea yang memanggil /api/studio/projects/generate. (4) Tab 'lab' diubah konten judulnya menjadi "Content Lab Recreate" dengan penjelasan membangun ulang video dari referensi. (5) Impor VISUAL_LOOKS_CATALOG, CAPTION_STYLE_PRESETS dari @youbellkey/video-templates; ThreeJsPresetEnum, VisualStyleId, CaptionStyleId dari @youbellkey/video-schema. (6) State createTopic/createLocale/createTrack/createVisualStyle/createCaptionStyle/createThreeJsPreset ditambahkan. (7) `## Riwayat Pengerjakan` block ditambahkan di akhir file.
+- Verifikasi: npm run typecheck (EXIT 0, semua workspace lulus), npm run test (23/23 lulus).
+- Status: selesai
+- Catatan tambahan: 34 visual look dan 17 Three.js preset kini tersedia sebagai dropdown di tab Content Lab. Tab Content Lab Recreate untuk membangun ulang video dari referensi riset. Tab Viral Research tetap tersedia untuk mencari referensi.
+

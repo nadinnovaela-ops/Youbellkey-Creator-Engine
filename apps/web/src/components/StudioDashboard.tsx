@@ -4,8 +4,10 @@ import { useCallback, useEffect, useState, type CSSProperties, type FormEvent } 
 import { useRouter } from 'next/navigation';
 import { createSupabaseBrowserClient } from '../lib/supabase-browser';
 import type { StudioOverviewPayload } from '../lib/studio-overview';
+import { VISUAL_LOOKS_CATALOG, CAPTION_STYLE_PRESETS } from '@youbellkey/video-templates';
+import { ThreeJsPresetEnum, type VisualStyleId, type CaptionStyleId } from '@youbellkey/video-schema';
 
-type TabId = 'jobs' | 'research' | 'lab' | 'workers' | 'channels' | 'vault';
+type TabId = 'jobs' | 'research' | 'lab' | 'create' | 'workers' | 'channels' | 'vault';
 
 const cardStyle: CSSProperties = {
   background: '#0F172A',
@@ -85,6 +87,14 @@ export function StudioDashboard({ initialData }: { initialData: StudioOverviewPa
   const [labLocale, setLabLocale] = useState<'id-ID' | 'en-US'>('id-ID');
   const [labTrack, setLabTrack] = useState<'MOTION_EXPLAINER' | 'AI_STORYTELLING'>('MOTION_EXPLAINER');
   const [labVariations, setLabVariations] = useState(3);
+
+  // Phase 2: Content Lab (Ide → Video) states
+  const [createTopic, setCreateTopic] = useState('');
+  const [createLocale, setCreateLocale] = useState<'id-ID' | 'en-US'>('id-ID');
+  const [createTrack, setCreateTrack] = useState<'MOTION_EXPLAINER' | 'AI_STORYTELLING'>('MOTION_EXPLAINER');
+  const [createVisualStyle, setCreateVisualStyle] = useState<VisualStyleId>('editorial-clean');
+  const [createCaptionStyle, setCreateCaptionStyle] = useState<CaptionStyleId>('clean-editorial');
+  const [createThreeJsPreset, setCreateThreeJsPreset] = useState<'orbital-particles' | 'floating-cards' | 'data-bars-3d' | 'diorama-city-flood' | 'diorama-volume-cube' | 'diorama-cutaway-strata' | 'diorama-map-compare' | 'voxel-world' | 'shinkai-light' | 'anime-scene' | 'kinetic-grid' | 'pixel-plane' | 'hologram-sphere' | 'origami-fold-3d' | 'neon-tunnel' | 'crystal-growth' | 'fluid-simulation'>('orbital-particles');
 
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
@@ -342,6 +352,46 @@ export function StudioDashboard({ initialData }: { initialData: StudioOverviewPa
       setNotice(
         `${json.projects?.length ?? labVariations} variasi skrip & YB Video Document v1.0 dibuat.${warnSuffix}`,
       );
+      await refreshOverview();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function generateFromCreateIdea(e: FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const res = await fetch('/api/studio/projects/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          topic: createTopic.trim() || undefined,
+          researchItemId: undefined,
+          channelId: undefined,
+          locale: createLocale,
+          videoTrack: createTrack,
+          variationCount: 1,
+          visualStyle: createVisualStyle,
+          captionStyle: createCaptionStyle,
+          threeJsPreset: createThreeJsPreset,
+        }),
+      });
+      const json = (await res.json()) as {
+        ok?: boolean;
+        projects?: Array<{ id: string }>;
+        usedFallbackTemplate?: boolean;
+        warnings?: string[];
+        error?: { message?: string };
+      };
+      if (!res.ok || !json.ok) throw new Error(json.error?.message ?? 'Gagal generate video dari ide');
+      const warnSuffix = json.warnings?.length ? ` Catatan: ${json.warnings[0]}` : '';
+      setNotice(`Konsep video dari ide "${createTopic}" berhasil dibuat.${warnSuffix}`);
+      setCreateTopic('');
       await refreshOverview();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error');
@@ -677,7 +727,8 @@ export function StudioDashboard({ initialData }: { initialData: StudioOverviewPa
           [
             ['jobs', `Jobs (${data.jobs.length})`],
             ['research', `Viral Research (${data.researchItems.length})`],
-            ['lab', `Content Lab (${data.projects.length})`],
+            ['create', `Content Lab (${data.projects.length})`],
+            ['lab', `Content Lab Recreate (${data.projects.length})`],
             ['workers', `Workers (${data.workers.length})`],
             ['channels', `Channels (${data.channels.length})`],
             ['vault', `AI Vault (${data.providers.length})`],
@@ -974,14 +1025,98 @@ export function StudioDashboard({ initialData }: { initialData: StudioOverviewPa
         </section>
       )}
 
-      {/* Tab 3: AI Content Lab & YB Video Document Editor */}
+      {/* Tab 3: Content Lab (Ide → Video) */}
+      {tab === 'create' && (
+        <section style={{ display: 'grid', gap: 14 }}>
+          <div style={{ ...cardStyle, display: 'grid', gap: 12 }}>
+            <div>
+              <h2 style={{ margin: 0, fontSize: '1.05rem' }}>Content Lab — Buat Video dari Ide</h2>
+              <p style={{ margin: '4px 0 0', fontSize: 12, color: '#94A3B8' }}>
+                Tulis ide video saja (mis. "buatkan saya video sejarah indonesia"), mesin riset akan membuat naskah dan YB Video Document v1.0 secara otomatis.
+              </p>
+            </div>
+
+            <form onSubmit={generateFromCreateIdea} style={{ display: 'grid', gap: 10 }}>
+              <textarea
+                rows={3}
+                value={createTopic}
+                onChange={(e) => setCreateTopic(e.target.value)}
+                placeholder="Ide video (mis. buatkan saya video sejarah indonesia, rahasia baterai solid-state, atau tips editing video)"
+                style={inputStyle}
+              />
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 8 }}>
+                <select
+                  value={createLocale}
+                  onChange={(e) => setCreateLocale(e.target.value as 'id-ID' | 'en-US')}
+                  style={inputStyle}
+                >
+                  <option value="id-ID">Bahasa Indonesia (id-ID)</option>
+                  <option value="en-US">English (en-US)</option>
+                </select>
+
+                <select
+                  value={createTrack}
+                  onChange={(e) => setCreateTrack(e.target.value as 'MOTION_EXPLAINER' | 'AI_STORYTELLING')}
+                  style={inputStyle}
+                >
+                  <option value="MOTION_EXPLAINER">Jalur A: Motion &amp; 3D Explainer ($0)</option>
+                  <option value="AI_STORYTELLING">Jalur B: AI Visual Storytelling</option>
+                </select>
+
+                <select
+                  value={createVisualStyle}
+                  onChange={(e) => setCreateVisualStyle(e.target.value as VisualStyleId)}
+                  style={inputStyle}
+                >
+                  {Object.entries(VISUAL_LOOKS_CATALOG).map(([id, look]) => (
+                    <option key={id} value={id}>
+                      {look.name}
+                    </option>
+                  ))}
+                </select>
+
+                <select
+                  value={createCaptionStyle}
+                  onChange={(e) => setCreateCaptionStyle(e.target.value as CaptionStyleId)}
+                  style={inputStyle}
+                >
+                  {CAPTION_STYLE_PRESETS.map((cs) => (
+                    <option key={cs.id} value={cs.id}>
+                      {cs.label}
+                    </option>
+                  ))}
+                </select>
+
+                <select
+                  value={createThreeJsPreset}
+                  onChange={(e) => setCreateThreeJsPreset(e.target.value as typeof createThreeJsPreset)}
+                  style={inputStyle}
+                >
+                  {(ThreeJsPresetEnum.options as string[]).map((id) => (
+                    <option key={id} value={id}>
+                      {id}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <button type="submit" disabled={busy} style={{ ...btnPrimary, justifySelf: 'start' }}>
+                {busy ? 'Membuat Video dari Ide...' : `Buat Video 9:16 dari Ide`}
+              </button>
+            </form>
+          </div>
+        </section>
+      )}
+
+      {/* Tab 4: Content Lab Recreate (Regen 3–5 Variasi + Originality Audit) */}
       {tab === 'lab' && (
         <section style={{ display: 'grid', gap: 14 }}>
           <div style={{ ...cardStyle, display: 'grid', gap: 12 }}>
             <div>
-              <h2 style={{ margin: 0, fontSize: '1.05rem' }}>AI Content Lab (Regen 3–5 Variasi + Originality Audit)</h2>
+              <h2 style={{ margin: 0, fontSize: '1.05rem' }}>Content Lab Recreate (Regen 3–5 Variasi + Originality Audit)</h2>
               <p style={{ margin: '4px 0 0', fontSize: 12, color: '#94A3B8' }}>
-                Mengubah topik atau referensi riset menjadi 3–5 sudut pandang original lengkap dengan `YB Video Document` v1.0 (1080×1920).
+                Membangun ulang video lain dari referensi riset menjadi 3–5 sudut pandang original lengkap dengan `YB Video Document` v1.0 (1080×1920). Viral Research tersedia di tab terpisah untuk mencari referensi.
               </p>
             </div>
 
@@ -990,7 +1125,7 @@ export function StudioDashboard({ initialData }: { initialData: StudioOverviewPa
                 rows={3}
                 value={labTopic}
                 onChange={(e) => setLabTopic(e.target.value)}
-                placeholder="Topik / Ide utama video (mis. Kenapa botol kaca berwarna hijau atau rahasia efisiensi baterai solid-state)"
+                placeholder="Topik atau referensi video untuk dibuat ulang (mis. Kenapa botol kaca berwarna hijau atau rahasia efisiensi baterai solid-state)"
                 style={inputStyle}
               />
 
@@ -1121,7 +1256,7 @@ export function StudioDashboard({ initialData }: { initialData: StudioOverviewPa
           <div style={{ ...cardStyle, display: 'grid', gap: 10 }}>
             <h2 style={{ margin: 0, fontSize: '1.05rem' }}>Daftar Konsep &amp; `YB Video Document` ({data.projects.length})</h2>
             {data.projects.length === 0 ? (
-              <p style={{ color: '#94A3B8', fontSize: 13 }}>Belum ada proyek konten. Buat 3–5 variasi konsep lewat form di atas.</p>
+              <p style={{ color: '#94A3B8', fontSize: 13 }}>Belum ada proyek konten. Buat konsep lewat form di atas.</p>
             ) : (
               <div style={{ display: 'grid', gap: 10 }}>
                 {data.projects.map((proj) => {
@@ -1226,7 +1361,7 @@ export function StudioDashboard({ initialData }: { initialData: StudioOverviewPa
         </section>
       )}
 
-      {/* Tab 4: Workers */}
+      {/* Tab 5: Workers */}
       {tab === 'workers' && (
         <section style={{ ...cardStyle, display: 'grid', gap: 14 }}>
           <h2 style={{ margin: 0, fontSize: '1.05rem' }}>Universal Workers (PC &amp; Docker ARM64)</h2>
@@ -1391,3 +1526,6 @@ export function StudioDashboard({ initialData }: { initialData: StudioOverviewPa
     </main>
   );
 }
+
+/* ## Riwayat Pengerjakan (Work History)
+- [27-11-2026 17:10:00 WIB] Model: Kilo | Sesi: reorganisasi-studio-dashboard | Aksi: Tambah tab 'create' (Content Lab — Buat Video dari Ide) dengan selector 34 visual look, 10 caption style, 17 Three.js preset; rename tab 'lab' → 'Content Lab Recreate'; tambah handler generateFromCreateIdea; impor VISUAL_LOOKS_CATALOG/CAPTION_STYLE_PRESETS dari @youbellkey/video-templates, ThreeJsPresetEnum/VisualStyleId/CaptionStyleId dari @youbellkey/video-schema | File: apps/web/src/components/StudioDashboard.tsx | Status: selesai */
