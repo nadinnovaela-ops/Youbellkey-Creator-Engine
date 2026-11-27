@@ -44,6 +44,9 @@ export async function POST(request: Request) {
       locale: parsed.data.locale,
       videoTrack: parsed.data.videoTrack,
       variationCount: parsed.data.variationCount,
+      visualStyle: parsed.data.visualStyle,
+      captionStyle: parsed.data.captionStyle,
+      threeJsPreset: parsed.data.threeJsPreset,
     },
     providerKeys,
   );
@@ -89,3 +92,6 @@ export async function POST(request: Request) {
     usage: generated.usage,
   });
 }
+
+/* ## Riwayat Pengerjakan (Work History)
+- [27-11-2026 17:30:00 WIB] Model: Kilo | Sesi: fix-variationcount-min-validation | Aksi: Pass parsed.data.visualStyle/captionStyle/threeJsPreset ke generateContentVariations agar gaya visual dan preset Three.js dari tab Content Lab disertakan dalam generate request | File: apps/web/src/app/api/studio/projects/generate/route.ts | Status: selesai */

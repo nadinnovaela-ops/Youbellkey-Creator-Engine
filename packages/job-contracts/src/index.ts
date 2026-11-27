@@ -127,7 +127,10 @@ export const GenerateContentLabRequestSchema = z.object({
   channelId: z.string().uuid().optional(),
   locale: z.enum(['id-ID', 'en-US']).default('id-ID'),
   videoTrack: z.enum(['MOTION_EXPLAINER', 'AI_STORYTELLING']).default('MOTION_EXPLAINER'),
-  variationCount: z.number().int().min(3).max(5).default(3),
+  variationCount: z.number().int().min(1).max(5).default(3),
+  visualStyle: z.string().optional(),
+  captionStyle: z.string().optional(),
+  threeJsPreset: z.string().optional(),
 }).refine((v) => Boolean(v.topic?.trim() || v.researchItemId), {
   message: 'Berikan topik/ide atau pilih researchItemId sebagai referensi.',
 });
@@ -172,3 +175,6 @@ export const CancelJobRequestSchema = z.object({
   jobId: z.string().uuid(),
   reason: z.string().max(200).optional(),
 });
+
+/* ## Riwayat Pengerjakan (Work History)
+- [27-11-2026 17:30:00 WIB] Model: Kilo | Sesi: fix-variationcount-min-validation | Aksi: Perbaiki GenerateContentLabRequestSchema variationCount dari min(3)→min(1) agar mendukung pembuatan 1 video tunggal dari ide (tab Content Lab baru). Tambah field visualStyle, captionStyle, threeJsPreset sebagai optional string | File: packages/job-contracts/src/index.ts | Status: selesai */

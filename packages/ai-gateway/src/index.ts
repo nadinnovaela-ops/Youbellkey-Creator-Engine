@@ -275,6 +275,9 @@ export interface ContentLabGenerationInput {
   locale: SupportedLocale;
   videoTrack: VideoTrack;
   variationCount: number;
+  visualStyle?: string;
+  captionStyle?: string;
+  threeJsPreset?: string;
 }
 
 export interface GeneratedContentVariation {
@@ -396,6 +399,9 @@ export function normalizeToValidYBVideoDocument(
     locale: SupportedLocale;
     videoTrack: VideoTrack;
     scenesText: string[];
+    visualStyle?: string;
+    captionStyle?: string;
+    threeJsPreset?: string;
   },
 ): YBVideoDocument {
   const obj = (rawDoc && typeof rawDoc === 'object' ? rawDoc : {}) as Record<string, unknown>;
@@ -446,6 +452,8 @@ export function normalizeToValidYBVideoDocument(
       width: 1080,
       height: 1920,
       fps: 30,
+      visualStyle: fallback.visualStyle ?? undefined,
+      captionStyle: fallback.captionStyle ?? undefined,
     },
     scenes,
     render: {
@@ -554,7 +562,7 @@ export function buildDeterministicVariations(
 ): Array<{ angle: string; hookText: string; title: string; scriptText: string; ybVideoDoc: YBVideoDocument }> {
   const isId = input.locale === 'id-ID';
   const topic = input.topicOrTitle.trim();
-  const count = Math.max(3, Math.min(5, input.variationCount));
+  const count = Math.max(1, Math.min(5, input.variationCount));
 
   // 11-scene templates → ~78s per video (4 + 8×8 + 6 + 5 = 79s)
   const templates = isId
@@ -746,6 +754,9 @@ export function buildDeterministicVariations(
         locale: input.locale,
         videoTrack: input.videoTrack,
         scenesText,
+        visualStyle: input.visualStyle ?? undefined,
+        captionStyle: input.captionStyle ?? undefined,
+        threeJsPreset: input.threeJsPreset ?? undefined,
       },
     );
 
@@ -763,7 +774,7 @@ export async function generateContentVariations(
   input: ContentLabGenerationInput,
   providerKeys: Record<string, string | undefined>,
 ): Promise<ContentLabGenerationOutput> {
-  const count = Math.max(3, Math.min(5, input.variationCount));
+  const count = Math.max(1, Math.min(5, input.variationCount));
   const warnings: string[] = [];
   const referenceCombined = [input.referenceSummary, input.referenceTranscript].filter(Boolean).join('\n').trim();
 
@@ -836,6 +847,9 @@ export async function generateContentVariations(
             locale: input.locale,
             videoTrack: input.videoTrack,
             scenesText: [hookText, title],
+            visualStyle: input.visualStyle ?? undefined,
+            captionStyle: input.captionStyle ?? undefined,
+            threeJsPreset: input.threeJsPreset ?? undefined,
           },
         );
         const scriptText = ybVideoDoc.scenes.map((s) => s.voiceover.text).join(' ');
@@ -879,3 +893,6 @@ export async function generateContentVariations(
     warnings,
   };
 }
+
+/* ## Riwayat Pengerjakan (Work History)
+- [27-11-2026 17:30:00 WIB] Model: Kilo | Sesi: fix-variationcount-min-validation | Aksi: ContentLabGenerationInput tambah visualStyle?, captionStyle?, threeJsPreset?. normalizeToValidYBVideoDocument fallback tambah 3 field + simpan visualStyle/captionStyle ke project. buildDeterministicVariations count clamp Math.max(3,...)→Math.max(1,...). generateContentVariations count clamp sama + pass 3 field ke normalize | File: packages/ai-gateway/src/index.ts | Status: selesai */

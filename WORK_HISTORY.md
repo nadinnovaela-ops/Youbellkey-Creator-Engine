@@ -148,3 +148,14 @@ File ini berfungsi sebagai **buku tamu / logbook karyawan** proyek. Setiap aktiv
 - Status: selesai
 - Catatan tambahan: 34 visual look dan 17 Three.js preset kini tersedia sebagai dropdown di tab Content Lab. Tab Content Lab Recreate untuk membangun ulang video dari referensi riset. Tab Viral Research tetap tersedia untuk mencari referensi.
 
+## Entri 15
+
+## [27-11-2026 17:15:00 WIB] - Model: Kilo - Sesi: fix-variationcount-min-validation
+- Mulai: [27-11-2026 17:15:00 WIB] | Selesai: [27-11-2026 17:30:00 WIB]
+- Instruksi/Percakapan: User report error "Too small: expected number to be >=3" saat mencoba buat video dari ide lewat tab Content Lab baru. Error berasal dari GenerateContentLabRequestSchema variationCount yang memiliki min(3), sedangkan handler generateFromCreateIdea mengirim variationCount: 1 untuk video tunggal dari ide.
+- File yang diedit: `packages/job-contracts/src/index.ts` (variationCount min(3)→min(1), tambah visualStyle/captionStyle/threeJsPreset field), `packages/ai-gateway/src/index.ts` (ContentLabGenerationInput tambah 3 field, normalizeToValidYBVideoDocument fallback tambah 3 field + simpan ke project.visualStyle/captionStyle, buildDeterministicVariations count clamp 3→1, generateContentVariations count clamp 3→1 + pass 3 field ke normalize), `apps/web/src/app/api/studio/projects/generate/route.ts` (pass visualStyle/captionStyle/threeJsPreset ke generateContentVariations), `tests/integration/phase2-research-and-lab.test.ts` (update test expectation variationCount: 2 → 0)
+- Aksi yang diperbaiki: (1) GenerateContentLabRequestSchema variationCount diubah dari z.number().int().min(3).max(5) menjadi min(1).max(5) untuk mendukung pembuatan 1 video dari ide. (2) ContentLabGenerationInput interface diperpanjang dengan visualStyle?, captionStyle?, threeJsPreset?. (3) normalizeToValidYBVideoDocument fallback menerima visualStyle/captionStyle/threeJsPreset dan menyimpan visualStyle/captionStyle ke YB Video Document project. (4) buildDeterministicVariations count clamp diubah dari Math.max(3, Math.min(5, count)) menjadi Math.max(1, Math.min(5, count)). (5) generateContentVariations count clamp sama, dan pass 3 field baru ke normalizeToValidYBVideoDocument. (6) Route handler pass parsed.data.visualStyle/captionStyle/threeJsPreset. (7) Test diperbarui: variationCount: 2 (yang sudah valid) diubah menjadi variationCount: 0 (masih invalid karena < 1).
+- Verifikasi: npm run typecheck (EXIT 0 semua workspace), npm run test (23/23 lulus), npm run test:license (passed: true, 168 green / 3 yellow / 0 red).
+- Status: selesai
+- Catatan tambahan: Error "Too small: expected number to be >=3" telah diperbaiki. Tab Content Lab sekarang dapat membuat 1 video tunggal dari ide tanpa error validasi. visualStyle dan captionStyle disimpan ke YB Video Document project section. threeJsPreset diterima oleh schema dan diteruskan ke pipeline render.
+

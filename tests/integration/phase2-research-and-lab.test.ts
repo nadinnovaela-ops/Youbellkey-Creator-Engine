@@ -174,9 +174,12 @@ Ini efek hamburan Rayleigh di atmosfer bumi.`;
 
     expect(() => CreateResearchSourceRequestSchema.parse({ channelInput: '@GadgetIn', niche: 'Teknologi' })).not.toThrow();
     expect(() => GenerateContentLabRequestSchema.parse({ locale: 'id-ID', variationCount: 3 })).toThrow();
-    expect(() => GenerateContentLabRequestSchema.parse({ topic: 'Topik', variationCount: 2 })).toThrow();
+    expect(() => GenerateContentLabRequestSchema.parse({ topic: 'Topik', variationCount: 0 })).toThrow();
     expect(() =>
       UpdateProjectDocumentRequestSchema.parse({ ybVideoDoc: normalized as unknown as Record<string, unknown> }),
     ).not.toThrow();
   });
 });
+
+/* ## Riwayat Pengerjakan (Work History)
+- [27-11-2026 17:30:00 WIB] Model: Kilo | Sesi: fix-variationcount-min-validation | Aksi: Update test expectation GenerateContentLabRequestSchema variationCount: 2 → 0 karena min diubah dari 3 menjadi 1, sehingga variationCount: 2 sudah valid dan tidak boleh throw | File: tests/integration/phase2-research-and-lab.test.ts | Status: selesai */
