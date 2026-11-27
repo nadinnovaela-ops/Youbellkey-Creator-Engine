@@ -5,7 +5,17 @@ export type ThreeJsPresetId =
   | 'diorama-city-flood'
   | 'diorama-volume-cube'
   | 'diorama-cutaway-strata'
-  | 'diorama-map-compare';
+  | 'diorama-map-compare'
+  | 'voxel-world'
+  | 'shinkai-light'
+  | 'anime-scene'
+  | 'kinetic-grid'
+  | 'pixel-plane'
+  | 'hologram-sphere'
+  | 'origami-fold-3d'
+  | 'neon-tunnel'
+  | 'crystal-growth'
+  | 'fluid-simulation';
 
 export interface ThreeJsScenePresetConfig {
   id: ThreeJsPresetId;
@@ -81,4 +91,97 @@ export const THREEJS_PRESETS: Record<ThreeJsPresetId, ThreeJsScenePresetConfig> 
     badgeLabel: 'AREA COMPARE',
     isDiorama: true,
   },
+  'voxel-world': {
+    id: 'voxel-world',
+    defaultParticleCount: 200,
+    backgroundHex: '#0F172A',
+    accentHex: '#22D3EE',
+    secondaryHex: '#A78BFA',
+    badgeLabel: 'VOXEL WORLD',
+    isDiorama: false,
+  },
+  'shinkai-light': {
+    id: 'shinkai-light',
+    defaultParticleCount: 150,
+    backgroundHex: '#DB2777',
+    accentHex: '#7C3AED',
+    secondaryHex: '#A855F7',
+    badgeLabel: 'SHINKAI LIGHT',
+    isDiorama: false,
+  },
+  'anime-scene': {
+    id: 'anime-scene',
+    defaultParticleCount: 120,
+    backgroundHex: '#06B6D4',
+    accentHex: '#3B82F6',
+    secondaryHex: '#22D3EE',
+    badgeLabel: 'ANIME SCENE',
+    isDiorama: false,
+  },
+  'kinetic-grid': {
+    id: 'kinetic-grid',
+    defaultParticleCount: 300,
+    backgroundHex: '#0F172A',
+    accentHex: '#FACC15',
+    secondaryHex: '#FFFFFF',
+    badgeLabel: 'KINETIC GRID',
+    isDiorama: false,
+  },
+  'pixel-plane': {
+    id: 'pixel-plane',
+    defaultParticleCount: 250,
+    backgroundHex: '#1E1B4B',
+    accentHex: '#A855F7',
+    secondaryHex: '#C084FC',
+    badgeLabel: 'PIXEL PLANE',
+    isDiorama: false,
+  },
+  'hologram-sphere': {
+    id: 'hologram-sphere',
+    defaultParticleCount: 400,
+    backgroundHex: '#020617',
+    accentHex: '#22D3EE',
+    secondaryHex: '#40F4EA',
+    badgeLabel: 'HOLOGRAM SPHERE',
+    isDiorama: false,
+  },
+  'origami-fold-3d': {
+    id: 'origami-fold-3d',
+    defaultParticleCount: 100,
+    backgroundHex: '#FDE047',
+    accentHex: '#F59E0B',
+    secondaryHex: '#FCD34D',
+    badgeLabel: 'ORIGAMI FOLD 3D',
+    isDiorama: true,
+  },
+  'neon-tunnel': {
+    id: 'neon-tunnel',
+    defaultParticleCount: 180,
+    backgroundHex: '#020617',
+    accentHex: '#EC4899',
+    secondaryHex: '#22D3EE',
+    badgeLabel: 'NEON TUNNEL',
+    isDiorama: false,
+  },
+  'crystal-growth': {
+    id: 'crystal-growth',
+    defaultParticleCount: 130,
+    backgroundHex: '#E0E7FF',
+    accentHex: '#C084FC',
+    secondaryHex: '#A78BFA',
+    badgeLabel: 'CRYSTAL GROWTH',
+    isDiorama: true,
+  },
+  'fluid-simulation': {
+    id: 'fluid-simulation',
+    defaultParticleCount: 500,
+    backgroundHex: '#06B6D4',
+    accentHex: '#0EA5E9',
+    secondaryHex: '#22D3EE',
+    badgeLabel: 'FLUID SIM',
+    isDiorama: false,
+  },
 };
+
+/* ## Riwayat Pengerjakan (Work History)
+- [27-11-2026 16:45:00 WIB] Model: Kilo | Sesi: implementasi-visual-looks-remotion | Aksi: Perluas ThreeJsPresetId type union dari 7 → 17 preset (voxel-world, shinkai-light, anime-scene, kinetic-grid, pixel-plane, hologram-sphere, origami-fold-3d, neon-tunnel, crystal-growth, fluid-simulation); tambah 10 entri THREEJS_PRESETS dengan defaultParticleCount, backgroundHex, accentHex, secondaryHex, badgeLabel, isDiorama untuk setiap preset baru | File: engines/threejs/src/index.ts | Status: selesai */

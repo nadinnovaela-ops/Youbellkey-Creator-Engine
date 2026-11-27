@@ -17,6 +17,16 @@ export const ThreeJsPresetEnum = z.enum([
   'diorama-volume-cube',
   'diorama-cutaway-strata',
   'diorama-map-compare',
+  'voxel-world',
+  'shinkai-light',
+  'anime-scene',
+  'kinetic-grid',
+  'pixel-plane',
+  'hologram-sphere',
+  'origami-fold-3d',
+  'neon-tunnel',
+  'crystal-growth',
+  'fluid-simulation',
 ]);
 
 export const VisualStyleSchema = z.enum([
@@ -24,6 +34,36 @@ export const VisualStyleSchema = z.enum([
   'editorial-clean',
   'midnight-tech',
   'bold-pop',
+  'kurzgesagt-flat',
+  'voxel-pixel',
+  'shinkai-cinematic',
+  'anime-shinkai',
+  'storytime-2d',
+  'kinetic-typography',
+  'pixel-art',
+  'isometric-3d',
+  'neon-cyberpunk',
+  'watercolor-painting',
+  'paper-cutout',
+  'retro-vaporwave',
+  'minimal-flat',
+  'comic-book',
+  'glitch-digital',
+  'claymation',
+  'origami-paper',
+  'low-poly-3d',
+  'gradient-mesh',
+  'risograph-print',
+  'manim-math',
+  'blueprint-technical',
+  'charcoal-sketch',
+  'neon-grid-retrowave',
+  'hologram-scifi',
+  'pastel-cotton',
+  'noir-shadow',
+  'cyber-grid',
+  'origami-fold',
+  'water-ink',
 ]);
 export type VisualStyleId = z.infer<typeof VisualStyleSchema>;
 
@@ -31,6 +71,13 @@ export const CaptionStyleSchema = z.enum([
   'bold-stroke',
   'pill-box',
   'clean-editorial',
+  'kurzgesagt-caption',
+  'shinkai-title',
+  'storytime-bubble',
+  'manim-equation',
+  'comic-halftone',
+  'pixel-font',
+  'neon-glow',
 ]);
 export type CaptionStyleId = z.infer<typeof CaptionStyleSchema>;
 
@@ -185,10 +232,13 @@ export function exportYBVideoDocumentToMotionMd(doc: YBVideoDocument): string {
   lines.push(
     '',
     '## Editable Choices',
-    '- Swap visual look (`diorama-maket`, `editorial-clean`, `midnight-tech`, `bold-pop`).',
+    '- Swap visual look (`diorama-maket`, `editorial-clean`, `midnight-tech`, `bold-pop`, `kurzgesagt-flat`, `voxel-pixel`, `shinkai-cinematic`, `anime-shinkai`, `storytime-2d`, `kinetic-typography`, `pixel-art`, `isometric-3d`, `neon-cyberpunk`, `watercolor-painting`, `paper-cutout`, `retro-vaporwave`, `minimal-flat`, `comic-book`, `glitch-digital`, `claymation`, `origami-paper`, `low-poly-3d`, `gradient-mesh`, `risograph-print`, `manim-math`, `blueprint-technical`, `charcoal-sketch`, `neon-grid-retrowave`, `hologram-scifi`, `pastel-cotton`, `noir-shadow`, `cyber-grid`, `origami-fold`, `water-ink`).',
     '- Toggle or customize the consistent vector character host (`bima-explainer`, `aria-tech`, `nova-analyst`, `none`).',
     '- Update scene voiceover or callout badges cleanly via JSON or Studio Editor.',
   );
 
   return `${lines.join('\n')}\n`;
 }
+
+/* ## Riwayat Pengerjakan (Work History)
+- [27-11-2026 16:45:00 WIB] Model: Kilo | Sesi: implementasi-visual-looks-remotion | Aksi: Perluas VisualStyleSchema dari 4 → 34 gaya visual (kurzgesagt-flat, voxel-pixel, shinkai-cinematic, anime-shinkai, storytime-2d, kinetic-typography, pixel-art, isometric-3d, neon-cyberpunk, watercolor-painting, paper-cutout, retro-vaporwave, minimal-flat, comic-book, glitch-digital, claymation, origami-paper, low-poly-3d, gradient-mesh, risograph-print, manim-math, blueprint-technical, charcoal-sketch, neon-grid-retrowave, hologram-scifi, pastel-cotton, noir-shadow, cyber-grid, origami-fold, water-ink); perluas CaptionStyleSchema dari 3 → 10 style (kurzgesagt-caption, shinkai-title, storytime-bubble, manim-equation, comic-halftone, pixel-font, neon-glow); perluas ThreeJsPresetEnum dari 7 → 17 preset (voxel-world, shinkai-light, anime-scene, kinetic-grid, pixel-plane, hologram-sphere, origami-fold-3d, neon-tunnel, crystal-growth, fluid-simulation); perbarui exportYBVideoDocumentToMotionMd editable choices | File: packages/video-schema/src/index.ts | Status: selesai */
