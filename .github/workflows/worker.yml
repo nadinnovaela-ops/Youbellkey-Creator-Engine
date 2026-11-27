@@ -1,0 +1,72 @@
+name: Youbellkey Universal Worker
+
+on:
+  schedule:
+    # Jalankan setiap 5 menit untuk memproses antrean job
+    - cron: '*/5 * * * *'
+  workflow_dispatch:  # Manual trigger via GitHub UI
+  push:
+    branches: [main]
+
+jobs:
+  worker:
+    name: Run Universal Worker
+    runs-on: ubuntu-latest
+    timeout-minutes: 15  # Max 15 menit per run (GitHub limit 6h, tapi aman 15m)
+    env:
+      YB_CONTROL_PLANE_URL: https://youbellkey-creator-engine-pwvheifg7-youbellkey1.vercel.app
+      YB_WORKER_TOKEN: ${{ secrets.YB_WORKER_TOKEN }}
+      YB_WORKER_ID: github-actions-${{ github.run_id }}
+      # Opsional: override defaults
+      YB_WORKER_POLL_INTERVAL_MS: 5000
+      YB_WORKER_HEARTBEAT_INTERVAL_MS: 30000
+      # API Keys (dari secrets GitHub)
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      # Supabase (untuk worker yg butuh DB langsung)
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      # Storage (opsional, untuk upload R2)
+      R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline --no-audit
+
+      - name: Verify worker token
+        run: |
+          if [ -z "$YB_WORKER_TOKEN" ]; then
+            echo "❌ YB_WORKER_TOKEN tidak diset di GitHub Secrets"
+            exit 1
+          fi
+          echo "✓ Worker token configured"
+
+      - name: Run Universal Worker (single poll cycle)
+        run: |
+          # Worker jalan sekali, claim job, execute, exit
+          # Bisa dijalankan berkali-kali via schedule
+          timeout 12m npx tsx workers/local-worker/src/cli.ts --once || true
+
+      - name: Upload worker logs (jika error)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: worker-logs
+          path: |
+            *.log
+            logs/

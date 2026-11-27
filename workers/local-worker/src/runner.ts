@@ -395,7 +395,7 @@ async function executeClaimedJob(
   throw new Error(`Job type ${job.jobType} tidak dikenal.`);
 }
 
-export async function startWorkerLoop(config: WorkerRuntimeConfig): Promise<void> {
+export async function startWorkerLoop(config: WorkerRuntimeConfig, runOnce = false): Promise<void> {
   if (!config.workerToken) {
     throw new Error('Missing YB_WORKER_TOKEN. Run bash infrastructure/local/sync-env.sh or generate a token in Studio.');
   }
@@ -434,6 +434,91 @@ export async function startWorkerLoop(config: WorkerRuntimeConfig): Promise<void
   console.log(
     `[youbellkey-worker] Registered worker=${config.workerName} id=${reg.workerId} arch=${platformArch} controlPlane=${config.controlPlaneUrl}`,
   );
+
+  // Single iteration mode (--once)
+  if (runOnce) {
+    try {
+      const { job } = await postWorkerJson<{ job: JobDispatch | null }>(config, '/api/worker/claim', {
+        workerId: reg.workerId,
+        capabilities: config.capabilities,
+      });
+
+      if (!job) {
+        console.log('[youbellkey-worker] No jobs available, exiting (--once mode).');
+        return;
+      }
+
+      console.log(`[youbellkey-worker] Claimed job=${job.jobId} type=${job.jobType} attempt=${job.attemptCount}`);
+
+      const isHeavyJob = job.jobType === 'RENDER_HYPERFRAMES' || job.jobType === 'PUBLISH_YOUTUBE_SHORTS';
+      const heartbeatMs = isHeavyJob ? 10_000 : Math.max(10_000, reg.heartbeatIntervalSeconds * 1000);
+      let lastProgressForHeartbeat = 0;
+
+      const heartbeatTimer = setInterval(async () => {
+        await postWorkerJson<{ ok: boolean; killSwitchActive: boolean }>(
+          config,
+          '/api/worker/heartbeat',
+          { workerId: reg!.workerId, jobId: job.jobId, progress: lastProgressForHeartbeat },
+        ).catch((err) => console.error('[youbellkey-worker] Heartbeat error:', err));
+      }, heartbeatMs);
+
+      const sendProgress = async (progress: number, message: string) => {
+        lastProgressForHeartbeat = progress;
+        try {
+          const hb = await postWorkerJson<{ ok: boolean; killSwitchActive: boolean }>(
+            config,
+            '/api/worker/heartbeat',
+            { workerId: reg!.workerId, jobId: job.jobId, progress, message: message.slice(0, 480) },
+          );
+          if (hb.killSwitchActive && job.jobType === 'PUBLISH_YOUTUBE_SHORTS') {
+            throw new Error('Aborted due to workspace kill switch.');
+          }
+        } catch (hbErr) {
+          const msg = hbErr instanceof Error ? hbErr.message : String(hbErr);
+          if (msg.includes('kill switch') || msg.includes('JOB_LEASE_LOST') || msg.includes('(409)')) {
+            throw hbErr;
+          }
+          console.warn('[youbellkey-worker] Transient progress heartbeat warning:', msg);
+        }
+      };
+
+      try {
+        const result = await executeClaimedJob(config, reg.workerId, job, sendProgress);
+        await postWorkerJson(config, '/api/worker/complete', {
+          workerId: reg.workerId,
+          jobId: job.jobId,
+          status: 'SUCCEEDED',
+          result,
+        });
+        console.log(`[youbellkey-worker] Completed job=${job.jobId}`);
+      } catch (jobError) {
+        const message = jobError instanceof Error ? jobError.message : 'Unknown worker error';
+        try {
+          await postWorkerJson(config, '/api/worker/complete', {
+            workerId: reg.workerId,
+            jobId: job.jobId,
+            status: 'FAILED',
+            errorCode: 'WORKER_EXECUTION_ERROR',
+            errorMessage: message.slice(0, 1900),
+          });
+        } catch (completeErr) {
+          console.error(
+            `[youbellkey-worker] Could not report failure for job=${job.jobId}:`,
+            completeErr instanceof Error ? completeErr.message : completeErr,
+          );
+        }
+        console.error(`[youbellkey-worker] Failed job=${job.jobId}: ${message}`);
+      } finally {
+        clearInterval(heartbeatTimer);
+      }
+} catch (loopError) {
+      console.error(
+        '[youbellkey-worker] Poll error:',
+        loopError instanceof Error ? loopError.message : loopError,
+      );
+    }
+    return;
+  }
 
   while (!stopping) {
     try {

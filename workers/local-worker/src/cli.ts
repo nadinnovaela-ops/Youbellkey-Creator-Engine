@@ -2,4 +2,6 @@ import { createDefaultWorkerConfig, loadLocalEnvFile, startWorkerLoop } from './
 
 loadLocalEnvFile(process.cwd());
 const config = createDefaultWorkerConfig(process.env);
-await startWorkerLoop(config);
+
+const runOnce = process.argv.includes('--once');
+await startWorkerLoop(config, runOnce);
