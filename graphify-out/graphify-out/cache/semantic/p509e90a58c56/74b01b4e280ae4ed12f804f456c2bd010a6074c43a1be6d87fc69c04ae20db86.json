@@ -1,0 +1,1 @@
+{"nodes": [{"id": "docs_api_contracts", "label": "API Contracts", "file_type": "document", "source_file": "docs/API_CONTRACTS.md", "rationale": "HTTP endpoint specifications for worker control, storage, and studio autopilot.", "_origin": "semantic"}], "edges": [], "hyperedges": []}

@@ -4,6 +4,10 @@ import { NextResponse } from 'next/server';
 import { jsonError, parseJsonBody } from '../../../../lib/http';
 import { authenticateWorker } from '../../../../lib/worker-auth';
 
+const HEAVY_JOB_TYPES = new Set(['RENDER_HYPERFRAMES', 'PUBLISH_YOUTUBE_SHORTS']);
+const STANDARD_LEASE_SECONDS = 900;
+const HEAVY_LEASE_SECONDS = 1500;
+
 export async function POST(request: Request) {
   const parsed = await parseJsonBody(request, ClaimJobRequestSchema);
   if (!parsed.ok) return parsed.response;
@@ -19,9 +23,7 @@ export async function POST(request: Request) {
   const { data: claimedRows, error: claimError } = await admin.rpc('claim_next_job', {
     p_worker_id: worker.id,
     p_capabilities: parsed.data.capabilities,
-    // Render jobs need longer lease (TTS × N scenes + Chrome headless + FFmpeg = up to 15 min)
-    // Heartbeat renewals keep this alive, but initial claim must be generous enough
-    p_lease_seconds: 900,
+    p_lease_seconds: STANDARD_LEASE_SECONDS,
   });
 
   if (claimError) {
@@ -29,18 +31,39 @@ export async function POST(request: Request) {
   }
 
   const job = Array.isArray(claimedRows) && claimedRows.length > 0 ? (claimedRows[0] as JobRow) : null;
+  const nowIso = new Date().toISOString();
 
   await admin
     .from('workers')
     .update({
       status: job ? 'BUSY' : 'ONLINE',
-      last_heartbeat_at: new Date().toISOString(),
+      last_heartbeat_at: nowIso,
     })
     .eq('id', worker.id);
 
   if (!job) {
     return NextResponse.json({ job: null });
   }
+
+  const isHeavy = HEAVY_JOB_TYPES.has(job.job_type);
+  const effectiveLeaseSeconds = isHeavy ? HEAVY_LEASE_SECONDS : STANDARD_LEASE_SECONDS;
+  const leaseExpiresAt = isHeavy
+    ? new Date(Date.now() + effectiveLeaseSeconds * 1000).toISOString()
+    : job.lease_expires_at;
+
+  // Reset stale progress/error_message from any prior reclaimed attempt,
+  // and extend initial lease atomically for heavy render/publish jobs.
+  await admin
+    .from('jobs')
+    .update({
+      progress: 0,
+      error_message: null,
+      ...(isHeavy ? { lease_expires_at: leaseExpiresAt } : {}),
+      updated_at: nowIso,
+    })
+    .eq('id', job.id)
+    .eq('locked_by_worker_id', worker.id)
+    .eq('status', 'RUNNING');
 
   return NextResponse.json({
     job: {
@@ -49,7 +72,7 @@ export async function POST(request: Request) {
       projectId: job.project_id,
       jobType: job.job_type,
       attemptCount: job.attempt_count,
-      leaseExpiresAt: job.lease_expires_at,
+      leaseExpiresAt,
       idempotencyKey: job.idempotency_key,
       payload: job.payload,
     },

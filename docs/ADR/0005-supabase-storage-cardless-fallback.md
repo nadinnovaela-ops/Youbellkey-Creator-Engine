@@ -1,0 +1,12 @@
+# ADR-0005: Supabase Storage Private Bucket sebagai Cardless Fallback untuk Cloudflare R2
+
+- **Status:** Accepted (2026-11-27)
+- **Konteks:** `ADR-0001` menetapkan **Cloudflare R2** sebagai Object Storage utama ($0 egress, 10 GB gratis). Namun untuk pemakaian pribadi V1 tanpa kartu kredit/debit internasional, Cloudflare R2 tidak dapat diaktifkan di dashboard Cloudflare karena gerbang verifikasi metode pembayaran. Sementara **Supabase PostgreSQL + Auth + RLS** sudah aktif dan menyertakan **Supabase Storage** gratis tanpa kartu (1 GB storage, batas objek standar 50 MB).
+- **Keputusan:**
+  1. **Cloudflare R2 tetap Prioritas #1 (`Primary`):** Setiap lingkungan yang mengonfigurasi `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, dan `R2_SECRET_ACCESS_KEY` tetap mengunggah dan menyajikan media lewat presigned URL Cloudflare R2 tanpa perubahan perilaku.
+  2. **Supabase Storage Fallback Otomatis (`Cardless V1 Fallback`):** Jika env Cloudflare R2 belum diisi (`isR2Configured() === false`), Control Plane (`apps/web/src/lib/media-storage.ts`) menggunakan private bucket Supabase Storage **`youbellkey-media`** (`public: false`, limit ukuran file `50 MB`) menggunakan **Signed Upload URL** (`createSignedUploadUrl`) dan **Signed Download URL** (`createSignedUrl`).
+  3. **Prefix Key Kompatibel Skema Existing (`media_assets.r2_key`):** Untuk menjaga kontrak migrasi database `0001_initial_schema.sql` tanpa perubahan skema destruktif, key objek fallback disimpan dalam kolom `media_assets.r2_key` dengan format URI internal `supabase://youbellkey-media/workspaces/{workspace_id}/projects/{project_id}/{kind}/{filename}`. Control Plane mengenali prefix `supabase://` saat membuat signed download URL di `/api/studio/projects/[id]/preview` dan `/api/worker/publish-token`.
+  4. **Keamanan & Isolasi Tenant:** Bucket bersifat `public: false`; browser PWA dan worker hanya menerima signed URL berumur pendek (15 menit untuk upload, 60 menit untuk preview/download) setelah verifikasi kepemilikan `workspace_id` via RLS atau validasi lease worker. Binary MP4 tetap **tidak pernah** melewati body request Serverless Vercel.
+- **Konsekuensi:**
+  - Pemakaian V1 pribadi dapat mengunggah hasil render ke cloud, memutar preview di UI Studio HP/PC, dan mengambil MP4 dari worker publikasi 100% gratis tanpa kartu.
+  - Batas objek per file pada free tier Supabase adalah `50 MB` (`fileSizeLimit: 52_428_800` bytes). Ketika video melebihi 50 MB atau kebutuhan komersial skala besar aktif, pengguna cukup mengisi kredensial R2 di Vercel env untuk beralih otomatis kembali ke Cloudflare R2.

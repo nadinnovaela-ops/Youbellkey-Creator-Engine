@@ -52,14 +52,14 @@ export const DEFAULT_FREE_ROUTING_RULES: RoutingRule[] = [
   { task: 'grammar_check', preferredProviders: ['groq-free', 'gemini-free', 'openrouter-free'] },
   { task: 'vision_analysis', preferredProviders: ['gemini-free', 'openrouter-free'] },
   { task: 'image_generation', preferredProviders: ['cloudflare-workers-ai', 'gemini-imagen'] },
-  { task: 'tts_voiceover', preferredProviders: ['google-cloud-tts', 'azure-speech-f0', 'edge-tts-personal'] },
+  { task: 'tts_voiceover', preferredProviders: ['google-cloud-tts', 'azure-speech-f0'] },
   { task: 'whisper_alignment', preferredProviders: ['groq-whisper-free'] },
 ];
 
 export const geminiFreeAdapter: AIProviderAdapter = {
   providerId: 'gemini-free',
   async generateText(req, apiKey) {
-    const models = ['gemini-3.5-flash-lite', 'gemini-3.8-flash', 'gemini-flash-lite-latest', 'gemini-flash-latest'];
+    const models = ['gemini-flash-lite-latest', 'gemini-3.5-flash-lite', 'gemini-flash-latest'];
     let lastErr = '';
 
     for (const model of models) {
@@ -80,7 +80,7 @@ export const geminiFreeAdapter: AIProviderAdapter = {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body),
-          signal: AbortSignal.timeout(10_000),
+          signal: AbortSignal.timeout(22_000),
         });
       } catch (err) {
         lastErr = `Gemini ${model} timeout/network: ${err instanceof Error ? err.message : String(err)}`;
@@ -332,7 +332,15 @@ function normalizeSceneLayer(
   }
 
   if (kind === 'threejs') {
-    const presets = ['orbital-particles', 'floating-cards', 'data-bars-3d'] as const;
+    const presets = [
+      'diorama-city-flood',
+      'diorama-volume-cube',
+      'diorama-cutaway-strata',
+      'diorama-map-compare',
+      'orbital-particles',
+      'floating-cards',
+      'data-bars-3d',
+    ] as const;
     const preset =
       typeof obj.preset === 'string' && presets.includes(obj.preset as (typeof presets)[number])
         ? (obj.preset as (typeof presets)[number])
@@ -405,10 +413,11 @@ export function normalizeToValidYBVideoDocument(
       const rawDur = Number(s.durationSeconds);
       const durationSeconds = Number.isFinite(rawDur) && rawDur >= 2 && rawDur <= 60 ? Number(rawDur.toFixed(1)) : 8;
 
+      const backgroundLayer = normalizeSceneLayer(s.backgroundLayer, fallback.videoTrack, fallback.title, idx);
       const templateId =
         fallback.videoTrack === 'AI_STORYTELLING'
           ? 'ai-visual-storytelling'
-          : idx === 1
+          : backgroundLayer.kind === 'threejs' || backgroundLayer.kind === 'chart'
             ? 'data-threejs-explainer'
             : 'kinetic-typography';
 
@@ -416,7 +425,7 @@ export function normalizeToValidYBVideoDocument(
         id: typeof s.id === 'string' && s.id.trim() ? s.id.trim() : `scene_${String(idx + 1).padStart(2, '0')}`,
         durationSeconds,
         templateId,
-        backgroundLayer: normalizeSceneLayer(s.backgroundLayer, fallback.videoTrack, fallback.title, idx),
+        backgroundLayer,
         voiceover: {
           text: voiceText,
           locale: fallback.locale,

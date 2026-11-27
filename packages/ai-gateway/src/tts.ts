@@ -93,59 +93,71 @@ export function estimateWordCaptionsFromScript(
 }
 
 async function callGeminiTts(text: string, locale: SupportedLocale, apiKey: string, voiceName?: string): Promise<{ wavBuffer: Buffer; model: string }> {
-  const models = ['gemini-3.8-flash-tts', 'gemini-2.5-flash-preview-tts'];
+  const models = [
+    'gemini-3.8-flash-tts',
+    'gemini-3.8-flash-lite-tts',
+    'gemini-3.1-flash-tts-preview',
+    'gemini-2.5-flash-preview-tts',
+  ];
   const selectedVoice = voiceName || (locale === 'id-ID' ? 'Kore' : 'Puck');
   // Pass only the exact spoken text so the TTS model does not narrate meta-instructions.
   const spokenText = text.trim();
 
   let lastErr = '';
   for (const model of models) {
-    try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey.trim())}`;
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: spokenText }] }],
-          generationConfig: {
-            responseModalities: ['AUDIO'],
-            speechConfig: {
-              voiceConfig: {
-                prebuiltVoiceConfig: { voiceName: selectedVoice },
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey.trim())}`;
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: spokenText }] }],
+            generationConfig: {
+              responseModalities: ['AUDIO'],
+              speechConfig: {
+                voiceConfig: {
+                  prebuiltVoiceConfig: { voiceName: selectedVoice },
+                },
               },
             },
-          },
-        }),
-        signal: AbortSignal.timeout(25_000),
-      });
+          }),
+          signal: AbortSignal.timeout(25_000),
+        });
 
-      if (!res.ok) {
-        lastErr = `Gemini TTS ${model} (${res.status}): ${(await res.text()).slice(0, 180)}`;
-        if ([404, 429, 500, 502, 503].includes(res.status)) continue;
-        throw new Error(lastErr);
+        if (!res.ok) {
+          lastErr = `Gemini TTS ${model} (${res.status}): ${(await res.text()).slice(0, 180)}`;
+          if (res.status === 429 && attempt === 0) {
+            await new Promise((resolve) => setTimeout(resolve, 1200));
+            continue;
+          }
+          if ([404, 429, 500, 502, 503].includes(res.status)) break;
+          throw new Error(lastErr);
+        }
+
+        const json = (await res.json()) as {
+          candidates?: Array<{
+            content?: { parts?: Array<{ inlineData?: { mimeType?: string; data?: string } }> };
+          }>;
+        };
+        const inline = json.candidates?.[0]?.content?.parts?.find((p) => p.inlineData?.data)?.inlineData;
+        if (!inline?.data) {
+          lastErr = `Gemini TTS ${model} returned no audio inlineData`;
+          break;
+        }
+
+        const rawBytes = Buffer.from(inline.data, 'base64');
+        const rateMatch = inline.mimeType?.match(/rate=(\d+)/i);
+        const sampleRate = rateMatch?.[1] ? Number(rateMatch[1]) : 24000;
+        const wavBuffer = inline.mimeType?.toLowerCase().includes('wav')
+          ? rawBytes
+          : pcmL16ToWavBuffer(rawBytes, sampleRate, 1, 16);
+
+        return { wavBuffer, model };
+      } catch (err) {
+        lastErr = err instanceof Error ? err.message : String(err);
+        break;
       }
-
-      const json = (await res.json()) as {
-        candidates?: Array<{
-          content?: { parts?: Array<{ inlineData?: { mimeType?: string; data?: string } }> };
-        }>;
-      };
-      const inline = json.candidates?.[0]?.content?.parts?.find((p) => p.inlineData?.data)?.inlineData;
-      if (!inline?.data) {
-        lastErr = `Gemini TTS ${model} returned no audio inlineData`;
-        continue;
-      }
-
-      const rawBytes = Buffer.from(inline.data, 'base64');
-      const rateMatch = inline.mimeType?.match(/rate=(\d+)/i);
-      const sampleRate = rateMatch?.[1] ? Number(rateMatch[1]) : 24000;
-      const wavBuffer = inline.mimeType?.toLowerCase().includes('wav')
-        ? rawBytes
-        : pcmL16ToWavBuffer(rawBytes, sampleRate, 1, 16);
-
-      return { wavBuffer, model };
-    } catch (err) {
-      lastErr = err instanceof Error ? err.message : String(err);
     }
   }
 

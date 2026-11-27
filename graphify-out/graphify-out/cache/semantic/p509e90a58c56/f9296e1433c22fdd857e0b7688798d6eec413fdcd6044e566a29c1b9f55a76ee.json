@@ -1,0 +1,1 @@
+{"nodes": [{"id": "docs_adr_0004", "label": "ADR-0004: YouTube Autopilot Guardrails", "file_type": "document", "source_file": "docs/ADR/0004-youtube-autopilot-guardrails.md", "rationale": "Decision on research engine and publishing safety gates.", "_origin": "semantic"}], "edges": [], "hyperedges": []}

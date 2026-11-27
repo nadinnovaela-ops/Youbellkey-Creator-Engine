@@ -25,7 +25,7 @@
 | V1 / Docker ARM64 Oracle/VPS)   |----->| - Assets (images/audio)  |
 | - workers/local-worker          |      | - Rendered MP4 (9:16)    |
 | - workers/render-worker         |      | - Auto-cleanup policy    |
-|   -> engines/hyperframes        |      +--------------------------+
+|   -> engines/hyperframes        |      +--------------------------+ (Fallback: Supabase Storage, lihat ADR-0005)|
 |   -> engines/threejs            |                   |
 |   -> engines/ffmpeg             |                   v
 | - workers/research-worker       |      +--------------------------+
@@ -38,8 +38,8 @@
 ## 2. Alur Eksekusi Hybrid Worker (Lease & Heartbeat)
 1. Control Plane membuat job di tabel `jobs` (`status = 'QUEUED'`).
 2. `local-worker` (atau `cloud-worker`) memanggil `POST /api/worker/claim` dengan daftar kapabilitasnya (`['render', 'research', 'publish']`).
-3. Supabase RPC `claim_next_job` memakai `SELECT ... FOR UPDATE SKIP LOCKED` untuk mengunci 1 job yang cocok, mengubah status menjadi `'RUNNING'`, dan mengisi `lease_expires_at = now() + interval '120 seconds'`.
-4. Selama eksekusi (render HyperFrames, encoding FFmpeg, upload YouTube), worker mengirim heartbeat setiap 30 detik ke `POST /api/worker/heartbeat` untuk memperpanjang lease dan melaporkan progress (`0..100%`).
+3. Supabase RPC `claim_next_job` memakai `SELECT ... FOR UPDATE SKIP LOCKED` untuk mengunci 1 job yang cocok, mengubah status menjadi `'RUNNING'`, dan mengisi `lease_expires_at = now() + interval '900 seconds'` (standar) atau `'1500 seconds'` untuk job berat (`RENDER_HYPERFRAMES`, `PUBLISH_YOUTUBE_SHORTS`).
+4. Selama eksekusi (render HyperFrames, encoding FFmpeg, upload YouTube), worker mengirim heartbeat setiap 30 detik ke `POST /api/worker/heartbeat` untuk memperpanjang lease (rolling window 1500 detik) dan melaporkan progress (`0..100%`).
 5. Jika laptop mati/tidur mendadak, fungsi pemulihan `reclaim_expired_leases` mendeteksi `lease_expires_at < now()`, menaikkan `attempt_count`, dan mengembalikan job ke `RETRY_PENDING` / `QUEUED` (atau `FAILED` jika melewati `max_attempts`).
 
 ## 3. Master Timeline & Clip Layering (`YB Video Document`)

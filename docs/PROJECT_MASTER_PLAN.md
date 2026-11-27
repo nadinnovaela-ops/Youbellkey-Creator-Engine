@@ -24,7 +24,7 @@
 | :--- | :--- | :--- |
 | **Control Plane UI & API** | **Next.js App Router + TypeScript (PWA)** di **Vercel** | Menggantikan NestJS terpisah; full online dari HP & PC, biaya server awal $0 |
 | **Database, Auth & Queue** | **Supabase (PostgreSQL + Auth + RLS)** + **Atomic Postgres Job Lease Queue** | Menggantikan Redis/BullMQ; worker di balik Wi-Fi rumah mengambil job via HTTPS (`FOR UPDATE SKIP LOCKED`) |
-| **Object Storage** | **Cloudflare R2** (S3-compatible, 10 GB gratis + $0 egress) | Presigned URLs langsung untuk preview HP PWA, upload YouTube, dan Meta Reels API; auto-cleanup render lama |
+| **Object Storage** | **Cloudflare R2** (Primary) + **Supabase Storage** (Cardless Fallback, ADR-0005) | Presigned/signed URLs langsung untuk preview HP PWA, upload YouTube, dan Meta Reels API; Supabase Storage free tier 1 GB (maks 50 MB/file) aktif otomatis jika R2 belum diisi |
 | **Universal Worker (V1)** | **PC/Laptop Pribadi** (Node.js ≥ 22 + HyperFrames + FFmpeg) | Dikemas **Docker / Linux-ARM64-ready** agar siap dipindah ke Oracle Ampere A1 (2 OCPU/12 GB) atau VPS kapan saja |
 | **Master Video Renderer** | **HyperFrames** (`Apache-2.0`) + **Three.js** (`MIT`) + **FFmpeg** CLI | **Template-Driven `YB Video Document` JSON + Clip Layering**; Manim/ComfyUI nanti menyuplai klip `.mp4/.png` ke layer HyperFrames |
 | **AI Provider Gateway** | **TypeScript-Native AI Adapter** (tanpa Python LiteLLM proxy) | Mendukung BYOK: Gemini, OpenRouter, Groq, OpenAI, Anthropic + Ollama worker di masa depan; pelacakan token & biaya per job |

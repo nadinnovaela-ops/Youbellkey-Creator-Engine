@@ -115,10 +115,12 @@ export async function lintHyperFramesProject(
 }
 
 function chooseSafeWorkerCount(): number {
+  const totalMb = os.totalmem() / (1024 * 1024);
   const freeMb = os.freemem() / (1024 * 1024);
   const cpuCount = os.cpus().length;
-  // Each Chrome render worker needs ~260 MB; use 2 workers when memory headroom permits
-  if (cpuCount >= 4 && freeMb >= 1400) return 2;
+  // Each Chrome render worker needs ~260 MB; match HyperFrames' built-in <= 8 GB low-memory guard
+  // so 8 GB laptops do not OOM/thrash by spawning 2 parallel Chromium processes.
+  if (totalMb > 9000 && cpuCount >= 4 && freeMb >= 2500) return 2;
   return 1;
 }
 
@@ -173,8 +175,8 @@ export async function renderHyperFramesProject(options: {
   }
 
   const timeoutMs = Math.max(
-    480_000,
-    Math.min(1_800_000, Math.round((options.expectedDurationSeconds ?? 60) * 14_000)),
+    600_000,
+    Math.min(2_400_000, Math.round((options.expectedDurationSeconds ?? 60) * 20_000)),
   );
 
   return new Promise((resolve, reject) => {
@@ -190,6 +192,7 @@ export async function renderHyperFramesProject(options: {
 
     let stdout = '';
     let stderr = '';
+    let stdoutBuf = '';
     let stderrBuf = '';
     let timedOut = false;
 
@@ -206,37 +209,59 @@ export async function renderHyperFramesProject(options: {
         const parsed = JSON.parse(line.slice(jsonIdx)) as {
           framesCompleted?: number;
           totalFrames?: number;
+          done?: number;
+          total?: number;
+          pct?: number;
         };
-        if (
-          typeof parsed.framesCompleted === 'number' &&
-          typeof parsed.totalFrames === 'number' &&
-          parsed.totalFrames > 0
-        ) {
-          options.onFrameProgress?.(parsed.framesCompleted, parsed.totalFrames);
+        const done =
+          typeof parsed.framesCompleted === 'number'
+            ? parsed.framesCompleted
+            : typeof parsed.done === 'number'
+              ? parsed.done
+              : typeof parsed.pct === 'number'
+                ? parsed.pct
+                : null;
+        const total =
+          typeof parsed.totalFrames === 'number' && parsed.totalFrames > 0
+            ? parsed.totalFrames
+            : typeof parsed.total === 'number' && parsed.total > 0
+              ? parsed.total
+              : typeof parsed.pct === 'number'
+                ? 100
+                : null;
+
+        if (done !== null && total !== null && total > 0) {
+          options.onFrameProgress?.(done, total);
         }
       } catch {
         // Non-JSON log line
       }
     };
 
+    const feedStreamBuf = (chunkText: string, buf: string): string => {
+      let combined = buf + chunkText;
+      let nl = combined.indexOf('\n');
+      while (nl >= 0) {
+        const line = combined.slice(0, nl).trim();
+        combined = combined.slice(nl + 1);
+        parseTraceLine(line);
+        nl = combined.indexOf('\n');
+      }
+      return combined;
+    };
+
     child.stdout?.on('data', (chunk: Buffer) => {
-      stdout += chunk.toString('utf8');
+      const text = chunk.toString('utf8');
+      stdout += text;
       if (stdout.length > 2 * 1024 * 1024) stdout = stdout.slice(-1024 * 1024);
+      stdoutBuf = feedStreamBuf(text, stdoutBuf);
     });
 
     child.stderr?.on('data', (chunk: Buffer) => {
       const text = chunk.toString('utf8');
       stderr += text;
       if (stderr.length > 2 * 1024 * 1024) stderr = stderr.slice(-1024 * 1024);
-
-      stderrBuf += text;
-      let nl = stderrBuf.indexOf('\n');
-      while (nl >= 0) {
-        const line = stderrBuf.slice(0, nl).trim();
-        stderrBuf = stderrBuf.slice(nl + 1);
-        parseTraceLine(line);
-        nl = stderrBuf.indexOf('\n');
-      }
+      stderrBuf = feedStreamBuf(text, stderrBuf);
     });
 
     child.on('error', (err) => {
@@ -246,6 +271,7 @@ export async function renderHyperFramesProject(options: {
 
     child.on('close', (code) => {
       clearTimeout(killTimer);
+      if (stdoutBuf.trim()) parseTraceLine(stdoutBuf.trim());
       if (stderrBuf.trim()) parseTraceLine(stderrBuf.trim());
       if (timedOut) {
         reject(new Error(`HyperFrames render timed out after ${Math.round(timeoutMs / 1000)}s.`));

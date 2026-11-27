@@ -27,6 +27,8 @@ export async function POST(request: Request) {
   }
 
   const admin = createSupabaseAdminClient();
+  await admin.rpc('reclaim_expired_leases');
+
   const { error } = await admin
     .from('workers')
     .update({

@@ -1,7 +1,8 @@
-import { createPresignedDownloadUrl, readR2ConfigFromEnv } from '@youbellkey/storage';
+import { createSupabaseAdminClient } from '@youbellkey/database';
 import { NextResponse } from 'next/server';
 import { getAuthenticatedWorkspace } from '../../../../../../lib/auth';
 import { jsonError } from '../../../../../../lib/http';
+import { createMediaDownloadUrl } from '../../../../../../lib/media-storage';
 
 export async function GET(
   _request: Request,
@@ -28,28 +29,38 @@ export async function GET(
       ok: true,
       hasCloudPreview: false,
       downloadUrl: null,
-      message: 'Belum ada hasil render tersimpan di Cloudflare R2.',
+      message: 'Belum ada hasil render tersimpan di Cloud Storage (R2 / Supabase Fallback).',
     });
   }
 
   const row = asset as { id: string; r2_key: string; mime_type: string; size_bytes: number };
-  const r2Config = readR2ConfigFromEnv();
-  if (!r2Config) {
+  const admin = createSupabaseAdminClient();
+  const dl = await createMediaDownloadUrl({
+    admin,
+    storedKey: row.r2_key,
+    expiresInSeconds: 3600,
+  });
+
+  if (!dl.configured || !dl.url) {
     return NextResponse.json({
       ok: true,
       hasCloudPreview: false,
+      storageProvider: dl.provider,
       r2Key: row.r2_key,
       downloadUrl: null,
-      message: 'Cloudflare R2 belum dikonfigurasi di Vercel env.',
+      message:
+        dl.provider === 'r2'
+          ? 'Cloudflare R2 belum dikonfigurasi di Vercel env.'
+          : 'Signed preview URL Supabase Storage tidak dapat dibuat.',
     });
   }
 
-  const downloadUrl = await createPresignedDownloadUrl(r2Config, row.r2_key, 3600);
   return NextResponse.json({
     ok: true,
     hasCloudPreview: true,
+    storageProvider: dl.provider,
     r2Key: row.r2_key,
     sizeBytes: row.size_bytes,
-    downloadUrl,
+    downloadUrl: dl.url,
   });
 }

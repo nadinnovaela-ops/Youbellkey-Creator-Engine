@@ -11,6 +11,11 @@ import { buildWorkspaceR2Key, isR2Configured, readR2ConfigFromEnv } from '@yoube
 import { YBVideoDocumentSchema, computeTotalDurationSeconds } from '@youbellkey/video-schema';
 import { V1_TEMPLATE_REGISTRY } from '@youbellkey/video-templates';
 import { isWorkerRecentlyActive } from '../../apps/web/src/lib/http.js';
+import {
+  encodeSupabaseStorageKey,
+  getActiveStorageProvider,
+  parseStoredMediaKey,
+} from '../../apps/web/src/lib/media-storage.js';
 import { createDefaultWorkerConfig, stripSurroundingQuotes } from '../../workers/local-worker/src/index.js';
 import { checkShortsAutopilotReadiness } from '../../workers/publish-worker/src/index.js';
 import { validateAndSummarizeRenderPlan } from '../../workers/render-worker/src/index.js';
@@ -216,5 +221,32 @@ describe('Phase 0 Core Contracts', () => {
     expect(stripSurroundingQuotes("'ybw_abc123'")).toBe('ybw_abc123');
     expect(isWorkerRecentlyActive(new Date().toISOString())).toBe(true);
     expect(isWorkerRecentlyActive(new Date(Date.now() - 120_000).toISOString())).toBe(false);
+
+    // ADR-0005 Supabase Storage cardless fallback encoding & provider resolution
+    const sbKey = encodeSupabaseStorageKey('youbellkey-media', 'workspaces/ws-1/projects/p-1/render-mp4/out.mp4');
+    expect(sbKey).toBe('supabase://youbellkey-media/workspaces/ws-1/projects/p-1/render-mp4/out.mp4');
+    expect(parseStoredMediaKey(sbKey)).toEqual({
+      provider: 'supabase',
+      bucket: 'youbellkey-media',
+      objectPath: 'workspaces/ws-1/projects/p-1/render-mp4/out.mp4',
+    });
+    expect(parseStoredMediaKey('workspaces/ws-1/projects/p-1/render-mp4/out.mp4')).toEqual({
+      provider: 'r2',
+      objectPath: 'workspaces/ws-1/projects/p-1/render-mp4/out.mp4',
+    });
+    expect(getActiveStorageProvider({
+      R2_ACCOUNT_ID: 'acct',
+      R2_ACCESS_KEY_ID: 'key',
+      R2_SECRET_ACCESS_KEY: 'secret',
+      NEXT_PUBLIC_SUPABASE_URL: 'https://x.supabase.co',
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
+      SUPABASE_SERVICE_ROLE_KEY: 'svc',
+    })).toBe('r2');
+    expect(getActiveStorageProvider({
+      NEXT_PUBLIC_SUPABASE_URL: 'https://x.supabase.co',
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
+      SUPABASE_SERVICE_ROLE_KEY: 'svc',
+    })).toBe('supabase');
+    expect(getActiveStorageProvider({})).toBe('none');
   });
 });

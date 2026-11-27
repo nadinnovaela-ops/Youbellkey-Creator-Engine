@@ -1,0 +1,1 @@
+{"nodes": [{"id": "third_party_notices", "label": "Third-Party Notices and SBOM", "file_type": "document", "source_file": "THIRD_PARTY_NOTICES.md", "rationale": "Maintains the software bill of materials and license audit results for core engines and binaries.", "_origin": "semantic"}], "edges": [], "hyperedges": []}

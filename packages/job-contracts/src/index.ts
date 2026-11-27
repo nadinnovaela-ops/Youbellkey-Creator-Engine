@@ -164,3 +164,11 @@ export const WorkerPublishTokenRequestSchema = z.object({
   jobId: z.string().uuid(),
   channelId: z.string().uuid(),
 });
+
+// --- Phase 1: Job Cancel ---
+
+export const CancelJobRequestSchema = z.object({
+  workerId: z.string().uuid(),
+  jobId: z.string().uuid(),
+  reason: z.string().max(200).optional(),
+});

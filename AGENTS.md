@@ -5,7 +5,7 @@ Aturan wajib untuk seluruh agen AI dan kontributor di repository `Youbellkey-Cre
 1. **Sumber Kebenaran Arsitektur:**
    - Ikuti keputusan di `docs/PROJECT_MASTER_PLAN.md` dan `docs/ADR/*`. Jangan mengubah stack secara diam-diam (mis. menambah NestJS/Redis/Python LiteLLM/Remotion wajib) tanpa membuat ADR baru terlebih dahulu.
    - Control Plane berjalan di **Vercel (Next.js App Router PWA + API)** + **Supabase (PostgreSQL + RLS + Postgres Atomic Job Lease Queue)**.
-   - Media & video final disimpan di **Cloudflare R2** (bukan di Supabase Storage atau server lokal tanpa backup).
+   - Media & video final disimpan di **Cloudflare R2** sebagai backend utama, atau fallback otomatis **Supabase Storage private bucket** (`ADR-0005`, gratis tanpa kartu kredit, batas 50 MB/file) saat R2 belum aktif—bukan di server lokal tanpa backup.
    - **HyperFrames** adalah master timeline renderer; engine lain (`threejs`, dan kelak `manim`/`motion-canvas`) memproduksi aset atau layer di dalam `YB Video Document`.
 
 2. **Keamanan, Isolasi Tenant & BYOK:**

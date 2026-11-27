@@ -1,10 +1,10 @@
 import { createSupabaseAdminClient, type JobRow } from '@youbellkey/database';
 import { WorkerPublishTokenRequestSchema } from '@youbellkey/job-contracts';
 import { refreshGoogleOAuthAccessToken } from '@youbellkey/publishing-adapters';
-import { createPresignedDownloadUrl, readR2ConfigFromEnv } from '@youbellkey/storage';
 import { NextResponse } from 'next/server';
 import { decryptSecret } from '../../../../lib/crypto';
 import { jsonError, parseJsonBody } from '../../../../lib/http';
+import { createMediaDownloadUrl } from '../../../../lib/media-storage';
 import { authenticateWorker } from '../../../../lib/worker-auth';
 
 /**
@@ -125,10 +125,9 @@ export async function POST(request: Request) {
     clientSecret,
   });
 
-  // 4. Optional short-lived presigned R2 download URL if MP4 is in R2
+  // 4. Optional short-lived signed download URL (Cloudflare R2 or Supabase Storage fallback)
   let downloadUrl: string | null = null;
   if (job.project_id) {
-    const r2Config = readR2ConfigFromEnv();
     const { data: asset } = await admin
       .from('media_assets')
       .select('r2_key')
@@ -139,9 +138,14 @@ export async function POST(request: Request) {
       .limit(1)
       .maybeSingle();
 
-    const r2Key = (asset as { r2_key?: string } | null)?.r2_key;
-    if (r2Config && r2Key) {
-      downloadUrl = await createPresignedDownloadUrl(r2Config, r2Key, 3600);
+    const storedKey = (asset as { r2_key?: string } | null)?.r2_key;
+    if (storedKey) {
+      const dl = await createMediaDownloadUrl({
+        admin,
+        storedKey,
+        expiresInSeconds: 3600,
+      });
+      downloadUrl = dl.url;
     }
   }
 

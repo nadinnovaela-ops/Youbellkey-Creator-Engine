@@ -1,17 +1,14 @@
 import { createSupabaseAdminClient, type JobRow } from '@youbellkey/database';
 import { WorkerPresignRenderUploadSchema } from '@youbellkey/job-contracts';
-import {
-  buildWorkspaceR2Key,
-  createPresignedUploadUrl,
-  readR2ConfigFromEnv,
-} from '@youbellkey/storage';
 import { NextResponse } from 'next/server';
 import { jsonError, parseJsonBody } from '../../../../lib/http';
+import { createMediaUploadTarget } from '../../../../lib/media-storage';
 import { authenticateWorker } from '../../../../lib/worker-auth';
 
 /**
- * Issues a short-lived Cloudflare R2 presigned PUT URL strictly scoped to the worker's
- * workspace & active RUNNING render job, keeping R2 secrets on the Control Plane only.
+ * Issues a short-lived signed PUT URL strictly scoped to the worker's
+ * workspace & active RUNNING render job, preferring Cloudflare R2 and
+ * falling back cleanly to Supabase Storage private bucket when R2 is unset (ADR-0005).
  */
 export async function POST(request: Request) {
   const parsed = await parseJsonBody(request, WorkerPresignRenderUploadSchema);
@@ -41,29 +38,24 @@ export async function POST(request: Request) {
     return jsonError(403, 'PROJECT_MISMATCH', 'Project ID does not match active job lease.');
   }
 
-  const r2Config = readR2ConfigFromEnv();
-  if (!r2Config) {
-    return NextResponse.json({
-      ok: true,
-      r2Configured: false,
-      r2Key: null,
-      uploadUrl: null,
-    });
-  }
-
-  const r2Key = buildWorkspaceR2Key(
-    worker.workspace_id,
-    parsed.data.projectId,
-    'render-mp4',
-    parsed.data.filename,
-  );
-  const uploadUrl = await createPresignedUploadUrl(r2Config, r2Key, parsed.data.contentType, 900);
+  const target = await createMediaUploadTarget({
+    admin,
+    workspaceId: worker.workspace_id,
+    projectId: parsed.data.projectId,
+    kind: 'render-mp4',
+    filename: parsed.data.filename,
+    contentType: parsed.data.contentType,
+    expiresInSeconds: 900,
+  });
 
   return NextResponse.json({
     ok: true,
-    r2Configured: true,
-    r2Key,
-    uploadUrl,
+    r2Configured: target.r2Configured,
+    storageConfigured: target.storageConfigured,
+    storageProvider: target.storageProvider,
+    r2Key: target.key,
+    uploadUrl: target.uploadUrl,
+    maxUploadBytes: target.maxUploadBytes,
     expiresInSeconds: 900,
   });
 }

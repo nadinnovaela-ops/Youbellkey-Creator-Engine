@@ -88,6 +88,19 @@ async function postWorkerJson<T>(
   return json;
 }
 
+function resolveRepoRootDir(startDir = process.cwd()): string {
+  let current = path.resolve(startDir);
+  while (true) {
+    if (fs.existsSync(path.join(current, 'engines', 'hyperframes', 'package.json'))) {
+      return current;
+    }
+    const parent = path.dirname(current);
+    if (parent === current) break;
+    current = parent;
+  }
+  return process.cwd();
+}
+
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -212,7 +225,7 @@ async function executeClaimedJob(
       document: job.payload.document,
       outputPath: localOutputPath,
       quality,
-      repoRootDir: process.cwd(),
+      repoRootDir: resolveRepoRootDir(),
       providerKeys: {
         geminiApiKey: process.env.GEMINI_API_KEY,
         groqApiKey: process.env.GROQ_API_KEY,
@@ -222,9 +235,13 @@ async function executeClaimedJob(
     });
 
     let r2Key: string | null = null;
+    const warnings = [...renderRes.warnings];
     const presign = await postWorkerJson<{
       ok: boolean;
       r2Configured: boolean;
+      storageConfigured?: boolean;
+      storageProvider?: 'r2' | 'supabase' | 'none';
+      maxUploadBytes?: number | null;
       r2Key: string | null;
       uploadUrl: string | null;
     }>(config, '/api/worker/presign-render-upload', {
@@ -235,21 +252,38 @@ async function executeClaimedJob(
       contentType: 'video/mp4',
     });
 
-    if (presign.r2Configured && presign.uploadUrl && presign.r2Key) {
-      await sendProgress(94, 'Mengunggah MP4 ke Cloudflare R2');
+    const uploadReady = Boolean(presign.uploadUrl && presign.r2Key);
+    const providerLabel =
+      presign.storageProvider === 'supabase' ? 'Supabase Storage' : 'Cloudflare R2';
+
+    if (uploadReady && presign.uploadUrl && presign.r2Key) {
       const mp4Bytes = await fsp.readFile(localOutputPath);
-      const putRes = await fetch(presign.uploadUrl, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'video/mp4' },
-        body: new Blob([new Uint8Array(mp4Bytes)], { type: 'video/mp4' }),
-      });
-      if (!putRes.ok) {
-        throw new Error(`Cloudflare R2 upload failed (${putRes.status})`);
+      if (presign.maxUploadBytes && mp4Bytes.byteLength > presign.maxUploadBytes) {
+        const sizeMb = (mp4Bytes.byteLength / (1024 * 1024)).toFixed(1);
+        const limitMb = (presign.maxUploadBytes / (1024 * 1024)).toFixed(0);
+        warnings.push(
+          `Ukuran MP4 (${sizeMb} MB) melebihi batas free tier ${providerLabel} (${limitMb} MB); hasil disimpan lokal di worker.`,
+        );
+      } else {
+        await sendProgress(94, `Mengunggah MP4 ke ${providerLabel}`);
+        const putHeaders: Record<string, string> = { 'Content-Type': 'video/mp4' };
+        if (presign.storageProvider === 'supabase') {
+          putHeaders['x-upsert'] = 'true';
+        }
+        const putRes = await fetch(presign.uploadUrl, {
+          method: 'PUT',
+          headers: putHeaders,
+          body: new Uint8Array(mp4Bytes),
+        });
+        if (!putRes.ok) {
+          const errBody = await putRes.text().catch(() => '');
+          throw new Error(`${providerLabel} upload failed (${putRes.status}): ${errBody.slice(0, 160)}`);
+        }
+        r2Key = presign.r2Key;
       }
-      r2Key = presign.r2Key;
     }
 
-    await sendProgress(100, r2Key ? 'Render & upload R2 selesai' : 'Render lokal selesai');
+    await sendProgress(100, r2Key ? `Render & upload ${providerLabel} selesai` : 'Render lokal selesai');
     return {
       projectId,
       r2Key,
@@ -259,7 +293,7 @@ async function executeClaimedJob(
       qualityGate: renderRes.qualityGate,
       ttsProviders: renderRes.ttsProviders,
       whisperAlignedScenes: renderRes.whisperAlignedScenes,
-      warnings: renderRes.warnings,
+      warnings,
     };
   }
 
@@ -290,9 +324,9 @@ async function executeClaimedJob(
 
     let videoBytes: Uint8Array | null = null;
     if (broker.downloadUrl) {
-      await sendProgress(35, 'Mengunduh MP4 tervalidasi dari Cloudflare R2');
+      await sendProgress(35, 'Mengunduh MP4 tervalidasi dari Cloud Storage');
       const dlRes = await fetch(broker.downloadUrl);
-      if (!dlRes.ok) throw new Error(`Gagal mengunduh MP4 dari R2 (${dlRes.status})`);
+      if (!dlRes.ok) throw new Error(`Gagal mengunduh MP4 dari Cloud Storage (${dlRes.status})`);
       videoBytes = new Uint8Array(await dlRes.arrayBuffer());
     } else {
       const localPath = path.join(os.homedir(), '.youbellkey', 'renders', `${projectId}.mp4`);
@@ -302,7 +336,7 @@ async function executeClaimedJob(
     }
 
     if (!videoBytes) {
-      throw new Error('File MP4 hasil render tidak ditemukan di R2 maupun di lokal worker.');
+      throw new Error('File MP4 hasil render tidak ditemukan di Cloud Storage maupun di lokal worker.');
     }
 
     await sendProgress(55, 'Mengunggah ke YouTube Shorts (Resumable Upload)...');
@@ -415,11 +449,20 @@ export async function startWorkerLoop(config: WorkerRuntimeConfig): Promise<void
 
       console.log(`[youbellkey-worker] Claimed job=${job.jobId} type=${job.jobType} attempt=${job.attemptCount}`);
 
-      // Render jobs can take 10–15 minutes (11 scenes × TTS + Chrome headless + FFmpeg).
-      // Use aggressive 15-second heartbeat so the 15-min rolling lease never expires.
+      // Render jobs bisa memakan waktu 10-25 menit (11 scene × TTS + Groq + Gemini + HyperFrames + FFmpeg).
+      // Heartbeat 10 detik untuk heavy jobs — jauh lebih agresif dari default 30s —
+      // agar lease 1500s yang baru selalu diperpanjang sebelum expired.
       const isHeavyJob = job.jobType === 'RENDER_HYPERFRAMES' || job.jobType === 'PUBLISH_YOUTUBE_SHORTS';
-      const heartbeatMs = isHeavyJob ? 15_000 : Math.max(10_000, reg.heartbeatIntervalSeconds * 1000);
+      const heartbeatMs = isHeavyJob ? 10_000 : Math.max(10_000, reg.heartbeatIntervalSeconds * 1000);
       let lastProgressForHeartbeat = 0;
+
+      // Kirim heartbeat awal segera setelah claim untuk memastikan lease tercatat sebagai RUNNING
+      void postWorkerJson(config, '/api/worker/heartbeat', {
+        workerId: reg!.workerId,
+        jobId: job.jobId,
+        progress: 0,
+        message: 'Job claimed, memulai eksekusi...',
+      }).catch((err) => console.error('[youbellkey-worker] Initial heartbeat error:', err));
 
       const heartbeatTimer = setInterval(() => {
         void postWorkerJson(config, '/api/worker/heartbeat', {
@@ -430,15 +473,24 @@ export async function startWorkerLoop(config: WorkerRuntimeConfig): Promise<void
       }, heartbeatMs);
 
       // Wrap sendProgress so heartbeat timer always knows latest progress
+      // and transient network errors do not abort an in-progress render.
       const origSendProgress = async (progress: number, message: string) => {
         lastProgressForHeartbeat = progress;
-        const hb = await postWorkerJson<{ ok: boolean; killSwitchActive: boolean }>(
-          config,
-          '/api/worker/heartbeat',
-          { workerId: reg!.workerId, jobId: job.jobId, progress, message },
-        );
-        if (hb.killSwitchActive && job.jobType === 'PUBLISH_YOUTUBE_SHORTS') {
-          throw new Error('Aborted due to workspace kill switch.');
+        try {
+          const hb = await postWorkerJson<{ ok: boolean; killSwitchActive: boolean }>(
+            config,
+            '/api/worker/heartbeat',
+            { workerId: reg!.workerId, jobId: job.jobId, progress, message: message.slice(0, 480) },
+          );
+          if (hb.killSwitchActive && job.jobType === 'PUBLISH_YOUTUBE_SHORTS') {
+            throw new Error('Aborted due to workspace kill switch.');
+          }
+        } catch (hbErr) {
+          const msg = hbErr instanceof Error ? hbErr.message : String(hbErr);
+          if (msg.includes('kill switch') || msg.includes('JOB_LEASE_LOST') || msg.includes('(409)')) {
+            throw hbErr;
+          }
+          console.warn('[youbellkey-worker] Transient progress heartbeat warning:', msg);
         }
       };
 
@@ -453,13 +505,20 @@ export async function startWorkerLoop(config: WorkerRuntimeConfig): Promise<void
         console.log(`[youbellkey-worker] Completed job=${job.jobId}`);
       } catch (jobError) {
         const message = jobError instanceof Error ? jobError.message : 'Unknown worker error';
-        await postWorkerJson(config, '/api/worker/complete', {
-          workerId: reg.workerId,
-          jobId: job.jobId,
-          status: 'FAILED',
-          errorCode: 'WORKER_EXECUTION_ERROR',
-          errorMessage: message,
-        });
+        try {
+          await postWorkerJson(config, '/api/worker/complete', {
+            workerId: reg.workerId,
+            jobId: job.jobId,
+            status: 'FAILED',
+            errorCode: 'WORKER_EXECUTION_ERROR',
+            errorMessage: message.slice(0, 1900),
+          });
+        } catch (completeErr) {
+          console.error(
+            `[youbellkey-worker] Could not report failure for job=${job.jobId}:`,
+            completeErr instanceof Error ? completeErr.message : completeErr,
+          );
+        }
         console.error(`[youbellkey-worker] Failed job=${job.jobId}: ${message}`);
       } finally {
         clearInterval(heartbeatTimer);

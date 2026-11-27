@@ -15,7 +15,7 @@ export async function POST(request: Request) {
 
   const admin = createSupabaseAdminClient();
   const nowIso = new Date().toISOString();
-  const newLeaseIso = new Date(Date.now() + 900 * 1000).toISOString(); // 15-min rolling window
+  const newLeaseIso = new Date(Date.now() + 1500 * 1000).toISOString(); // 25-min rolling window
 
   await admin
     .from('workers')
@@ -34,16 +34,22 @@ export async function POST(request: Request) {
       updateFields.progress = parsed.data.progress;
     }
 
-    const { error: jobError } = await admin
+    const { data: updatedJob, error: jobError } = await admin
       .from('jobs')
       .update(updateFields)
       .eq('id', parsed.data.jobId)
       .eq('workspace_id', worker.workspace_id)
       .eq('locked_by_worker_id', worker.id)
-      .eq('status', 'RUNNING');
+      .eq('status', 'RUNNING')
+      .select('id')
+      .maybeSingle();
 
     if (jobError) {
       return jsonError(500, 'HEARTBEAT_JOB_UPDATE_FAILED', jobError.message);
+    }
+
+    if (!updatedJob) {
+      return jsonError(409, 'JOB_LEASE_LOST', 'Worker no longer holds an active RUNNING lease for this job.');
     }
   }
 

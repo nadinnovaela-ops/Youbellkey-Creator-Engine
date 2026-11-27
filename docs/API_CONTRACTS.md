@@ -5,7 +5,7 @@ Seluruh endpoint HTTP berada di Next.js App Router (`apps/web/src/app/api/...`) 
 ## 1. Worker Control Plane Protocol (Bearer Worker Token)
 - `POST /api/worker/register`
   - **Input:** `{ worker_name, platform_arch, capabilities: ('render' | 'research' | 'publish')[] }`
-  - **Output:** `{ worker_id, heartbeat_interval_seconds: 30, lease_ttl_seconds: 120 }`
+  - **Output:** `{ worker_id, heartbeat_interval_seconds: 30, lease_ttl_seconds: 900 }` (job berat `RENDER_HYPERFRAMES` / `PUBLISH_YOUTUBE_SHORTS` memperpanjang lease ke `1500` detik saat claim dan heartbeat).
 - `POST /api/worker/claim`
   - **Input:** `{ worker_id, capabilities }`
   - **Output:** `{ job: JobDispatch | null }` (berisi `job_id`, `job_type`, `payload`, dan presigned R2 URLs bila perlu; **tidak pernah** menyertakan secret mentah permanen).

@@ -1,0 +1,1 @@
+{"nodes": [{"id": "docs_adr_0005", "label": "ADR-0005: Supabase Storage Fallback", "file_type": "document", "source_file": "docs/ADR/0005-supabase-storage-cardless-fallback.md", "rationale": "Decision to use Supabase Storage when Cloudflare R2 is unconfigured.", "_origin": "semantic"}], "edges": [], "hyperedges": []}

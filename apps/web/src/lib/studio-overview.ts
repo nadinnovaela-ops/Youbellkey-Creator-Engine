@@ -11,6 +11,11 @@ import { REGISTERED_PROVIDERS } from '@youbellkey/provider-adapters';
 import { isR2Configured } from '@youbellkey/storage';
 import type { AuthenticatedContext } from './auth';
 import { isWorkerRecentlyActive } from './http';
+import {
+  getActiveStorageProvider,
+  isSupabaseStorageFallbackConfigured,
+  type StorageProviderKind,
+} from './media-storage';
 
 export interface StudioOverviewPayload {
   userEmail: string | null;
@@ -23,6 +28,8 @@ export interface StudioOverviewPayload {
   };
   readiness: {
     r2Configured: boolean;
+    supabaseStorageFallbackConfigured: boolean;
+    storageProvider: StorageProviderKind;
     secretsMasterKeyConfigured: boolean;
     geminiEnvConfigured: boolean;
     groqEnvConfigured: boolean;
@@ -286,6 +293,8 @@ export async function loadStudioOverview(ctx: AuthenticatedContext): Promise<Stu
     },
     readiness: {
       r2Configured: isR2Configured(),
+      supabaseStorageFallbackConfigured: isSupabaseStorageFallbackConfigured(),
+      storageProvider: getActiveStorageProvider(),
       secretsMasterKeyConfigured: /^[0-9a-fA-F]{64}$/.test(process.env.YB_SECRETS_MASTER_KEY ?? ''),
       geminiEnvConfigured: Boolean(process.env.GEMINI_API_KEY),
       groqEnvConfigured: Boolean(process.env.GROQ_API_KEY),

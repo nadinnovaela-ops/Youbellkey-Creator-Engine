@@ -108,15 +108,23 @@ export function StudioDashboard({ initialData }: { initialData: StudioOverviewPa
     }
   }, [router]);
 
-  const hasActiveJobs = data.jobs.some((j) => j.status === 'QUEUED' || j.status === 'RUNNING');
+  const hasActiveJobs = data.jobs.some(
+    (j) =>
+      j.status === 'QUEUED' ||
+      j.status === 'RUNNING' ||
+      j.status === 'RETRY_PENDING' ||
+      j.status === 'PUBLISHING',
+  );
+  const onlineWorkers = data.workers.filter((w) => w.status === 'ONLINE' || w.status === 'BUSY');
 
   useEffect(() => {
-    if (!hasActiveJobs) return;
+    const intervalMs = hasActiveJobs ? 3000 : tab === 'jobs' || tab === 'workers' ? 10000 : 0;
+    if (!intervalMs) return;
     const timer = setInterval(() => {
       void refreshOverview();
-    }, 3000);
+    }, intervalMs);
     return () => clearInterval(timer);
-  }, [hasActiveJobs, refreshOverview]);
+  }, [hasActiveJobs, tab, refreshOverview]);
 
   async function toggleKillSwitch() {
     setBusy(true);
@@ -128,6 +136,23 @@ export function StudioDashboard({ initialData }: { initialData: StudioOverviewPa
         body: JSON.stringify({ killSwitchActive: !data.workspace.killSwitchActive }),
       });
       if (!res.ok) throw new Error('Gagal mengubah status Kill Switch');
+      await refreshOverview();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function cancelJob(jobId: string) {
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const res = await fetch(`/api/studio/jobs/${jobId}/cancel`, { method: 'POST' });
+      const json = (await res.json()) as { ok?: boolean; message?: string; error?: { message?: string } };
+      if (!res.ok || !json.ok) throw new Error(json.error?.message ?? 'Gagal membatalkan job');
+      setNotice(json.message ?? 'Job dibatalkan.');
       await refreshOverview();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error');
@@ -405,7 +430,7 @@ export function StudioDashboard({ initialData }: { initialData: StudioOverviewPa
       };
       if (!res.ok || !json.ok) throw new Error(json.error?.message ?? 'Gagal memuat preview video');
       if (!json.hasCloudPreview || !json.downloadUrl) {
-        setNotice(json.message ?? 'Video tersimpan lokal di ~/.youbellkey/renders/ pada PC worker (R2 belum aktif).');
+        setNotice(json.message ?? 'Video tersimpan lokal di ~/.youbellkey/renders/ pada PC worker (Cloud Storage belum aktif).');
         return;
       }
       setPreviewVideo({ projectId: project.id, title: project.title, url: json.downloadUrl });
@@ -611,7 +636,14 @@ export function StudioDashboard({ initialData }: { initialData: StudioOverviewPa
           { label: 'Gemini Env', ok: data.readiness.geminiEnvConfigured },
           { label: 'Groq Env', ok: data.readiness.groqEnvConfigured },
           { label: 'YouTube API (Opsional)', ok: data.readiness.youtubeApiConfigured },
-          { label: 'Cloudflare R2 (Phase 3)', ok: data.readiness.r2Configured },
+          {
+            label: data.readiness.r2Configured
+              ? 'Cloudflare R2 (Primary)'
+              : data.readiness.supabaseStorageFallbackConfigured
+                ? 'Supabase Storage (Free Fallback)'
+                : 'Cloud Storage',
+            ok: data.readiness.r2Configured || data.readiness.supabaseStorageFallbackConfigured,
+          },
         ].map((item) => (
           <span
             key={item.label}
@@ -687,6 +719,21 @@ export function StudioDashboard({ initialData }: { initialData: StudioOverviewPa
             </button>
           </div>
 
+          <div
+            style={{
+              padding: '0.6rem 0.85rem',
+              borderRadius: 10,
+              fontSize: 12,
+              border: `1px solid ${onlineWorkers.length > 0 ? '#065F46' : '#92400E'}`,
+              background: onlineWorkers.length > 0 ? '#052E16' : '#451A03',
+              color: onlineWorkers.length > 0 ? '#6EE7B7' : '#FCD34D',
+            }}
+          >
+            {onlineWorkers.length > 0
+              ? `✓ Worker PC Aktif: ${onlineWorkers.map((w) => `${w.workerName} (${w.status})`).join(', ')}`
+              : '⚠️ Tidak ada Worker PC yang ONLINE saat ini. Job tetap QUEUED sampai Worker dijalankan (npm run worker:local).'}
+          </div>
+
           {data.jobs.length === 0 ? (
             <p style={{ color: '#94A3B8', fontSize: 13 }}>Belum ada job di workspace ini.</p>
           ) : (
@@ -698,17 +745,68 @@ export function StudioDashboard({ initialData }: { initialData: StudioOverviewPa
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
                     <strong>{job.jobType}</strong>
-                    <span style={{ color: job.status === 'FAILED' ? '#FCA5A5' : '#38BDF8', fontWeight: 600 }}>
+                    <span style={{
+                      color: job.status === 'FAILED' ? '#FCA5A5'
+                        : job.status === 'APPROVED' ? '#86EFAC'
+                        : job.status === 'RUNNING' ? '#FCD34D'
+                        : '#38BDF8',
+                      fontWeight: 600
+                    }}>
                       {job.status} ({job.progress}%)
                     </span>
                   </div>
                   <div style={{ marginTop: 6, height: 6, background: '#1E293B', borderRadius: 999, overflow: 'hidden' }}>
-                    <div style={{ width: `${Math.min(100, Math.max(0, job.progress))}%`, height: '100%', background: '#38BDF8' }} />
+                    <div style={{
+                      width: `${Math.min(100, Math.max(0, job.progress))}%`,
+                      height: '100%',
+                      background: job.status === 'FAILED' ? '#FCA5A5'
+                        : job.status === 'APPROVED' ? '#86EFAC'
+                        : '#38BDF8'
+                    }} />
                   </div>
                   <div style={{ marginTop: 6, fontSize: 11, color: '#94A3B8' }}>
                     Capability: {job.requiredCapability} · Attempt {job.attemptCount}/{job.maxAttempts} · {job.id.slice(0, 8)}
                     {job.errorMessage ? ` · ${job.errorMessage}` : ''}
                   </div>
+                  {job.status === 'FAILED' && (
+                    <button
+                      type="button"
+                      disabled={busy}
+                      style={{ ...btnSecondary, marginTop: 8, fontSize: 11, color: '#FCA5A5', borderColor: '#FCA5A5' }}
+                      onClick={() => {
+                        setBusy(true);
+                        setError(null);
+                        setNotice(null);
+                        fetch(`/api/studio/jobs/${job.id}/retry`, { method: 'POST' })
+                          .then((r) => r.json())
+                          .then((json: { ok?: boolean; message?: string; error?: { message?: string } }) => {
+                            if (json.ok) {
+                              setNotice(json.message ?? 'Job direset ke QUEUED.');
+                            } else {
+                              setError(json.error?.message ?? 'Gagal retry job.');
+                            }
+                            void refreshOverview();
+                          })
+                          .catch(() => setError('Gagal retry job.'))
+                          .finally(() => setBusy(false));
+                      }}
+                    >
+                      Retry Job
+                    </button>
+                  )}
+                  {(job.status === 'QUEUED' ||
+                    job.status === 'RUNNING' ||
+                    job.status === 'RETRY_PENDING' ||
+                    job.status === 'PUBLISHING') && (
+                    <button
+                      type="button"
+                      disabled={busy}
+                      style={{ ...btnSecondary, marginTop: 8, fontSize: 11, color: '#FCD34D', borderColor: '#F59E0B' }}
+                      onClick={() => void cancelJob(job.id)}
+                    >
+                      Batalkan Job
+                    </button>
+                  )}
                 </div>
               ))}
             </div>

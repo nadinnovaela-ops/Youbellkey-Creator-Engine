@@ -1,0 +1,916 @@
+{
+  "nodes": [
+    {
+      "id": "agents_skills_yb_architect_skill_yb_architect",
+      "label": "yb-architect Skill",
+      "file_type": "document",
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-architect/SKILL.md",
+      "source_location": "L1-L21",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "agents_skills_yb_architect_skill_hybrid_ringan_constraints",
+      "label": "Hybrid Ringan Stack Constraints (Vercel + Supabase + R2 + Universal Worker)",
+      "file_type": "rationale",
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-architect/SKILL.md",
+      "source_location": "L15-L20",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "agents_skills_yb_license_auditor_skill_yb_license_auditor",
+      "label": "yb-license-auditor Skill",
+      "file_type": "document",
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-license-auditor/SKILL.md",
+      "source_location": "L1-L22",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "agents_skills_yb_license_auditor_skill_license_tiers",
+      "label": "Commercial License Classification (Green/Yellow/Red Tiers & SBOM)",
+      "file_type": "rationale",
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-license-auditor/SKILL.md",
+      "source_location": "L15-L22",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "agents_skills_yb_originality_auditor_skill_yb_originality_auditor",
+      "label": "yb-originality-auditor Skill",
+      "file_type": "document",
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-originality-auditor/SKILL.md",
+      "source_location": "L1-L20",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "agents_skills_yb_originality_auditor_skill_originality_verdict",
+      "label": "Content Regen Originality & Monetization Compliance Check",
+      "file_type": "concept",
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-originality-auditor/SKILL.md",
+      "source_location": "L11-L20",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "agents_skills_yb_publishing_auditor_skill_yb_publishing_auditor",
+      "label": "yb-publishing-auditor Skill",
+      "file_type": "document",
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-publishing-auditor/SKILL.md",
+      "source_location": "L1-L18",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "agents_skills_yb_publishing_auditor_skill_pre_publish_guardrails",
+      "label": "YouTube Shorts Pre-Publish Guardrails (Kill Switch, MP4 Integrity, Idempotency, Quota)",
+      "file_type": "concept",
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-publishing-auditor/SKILL.md",
+      "source_location": "L13-L18",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "agents_skills_yb_render_engineer_skill_yb_render_engineer",
+      "label": "yb-render-engineer Skill",
+      "file_type": "document",
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-render-engineer/SKILL.md",
+      "source_location": "L1-L17",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "agents_skills_yb_render_engineer_skill_hyperframes_render_rules",
+      "label": "HyperFrames Deterministic Rendering, Word-Synced Captions & Chromium Cleanup",
+      "file_type": "concept",
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-render-engineer/SKILL.md",
+      "source_location": "L13-L17",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "agents_skills_yb_security_auditor_skill_yb_security_auditor",
+      "label": "yb-security-auditor Skill",
+      "file_type": "document",
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-security-auditor/SKILL.md",
+      "source_location": "L1-L18",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "agents_skills_yb_security_auditor_skill_security_boundaries",
+      "label": "Tenant RLS, AES-256-GCM Secret Encryption & SHA-256 Worker Auth",
+      "file_type": "rationale",
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-security-auditor/SKILL.md",
+      "source_location": "L13-L18",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "agents_skills_yb_test_engineer_skill_yb_test_engineer",
+      "label": "yb-test-engineer Skill",
+      "file_type": "document",
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-test-engineer/SKILL.md",
+      "source_location": "L1-L20",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "agents_skills_yb_test_engineer_skill_vitest_standards",
+      "label": "Vitest Contract, Security & License Regression Testing Standards",
+      "file_type": "concept",
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-test-engineer/SKILL.md",
+      "source_location": "L13-L20",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "agents_skills_yb_video_director_skill_yb_video_director",
+      "label": "yb-video-director Skill",
+      "file_type": "document",
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-video-director/SKILL.md",
+      "source_location": "L1-L19",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "agents_skills_yb_video_director_skill_yb_video_document_tracks",
+      "label": "YB Video Document v1.0 (9:16 Vertical, MOTION_EXPLAINER & AI_STORYTELLING)",
+      "file_type": "concept",
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-video-director/SKILL.md",
+      "source_location": "L11-L19",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "agents_skills_yb_worker_reliability_skill_yb_worker_reliability",
+      "label": "yb-worker-reliability Skill",
+      "file_type": "document",
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-worker-reliability/SKILL.md",
+      "source_location": "L1-L17",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "agents_skills_yb_worker_reliability_skill_atomic_job_lease",
+      "label": "Atomic Job Lease (FOR UPDATE SKIP LOCKED), Heartbeats & Lease Recovery",
+      "file_type": "concept",
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-worker-reliability/SKILL.md",
+      "source_location": "L13-L17",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "engines_hyperframes_fonts_bebasneue_ofl_license",
+      "label": "Bebas Neue Font License (SIL OFL-1.1)",
+      "file_type": "concept",
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/engines/hyperframes/fonts/BebasNeue-OFL.txt",
+      "source_location": "L1-L10",
+      "source_url": null,
+      "captured_at": null,
+      "author": "The Bebas Neue Project Authors",
+      "contributor": null
+    },
+    {
+      "id": "engines_hyperframes_fonts_inter_ofl_license",
+      "label": "Inter Font License (SIL OFL-1.1)",
+      "file_type": "concept",
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/engines/hyperframes/fonts/Inter-OFL.txt",
+      "source_location": "L1-L10",
+      "source_url": null,
+      "captured_at": null,
+      "author": "The Inter Project Authors",
+      "contributor": null
+    },
+    {
+      "id": "engines_hyperframes_fonts_jetbrainsmono_ofl_license",
+      "label": "JetBrains Mono Font License (SIL OFL-1.1)",
+      "file_type": "concept",
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/engines/hyperframes/fonts/JetBrainsMono-OFL.txt",
+      "source_location": "L1-L10",
+      "source_url": null,
+      "captured_at": null,
+      "author": "The JetBrains Mono Project Authors",
+      "contributor": null
+    },
+    {
+      "id": "engines_hyperframes_fonts_nunito_ofl_license",
+      "label": "Nunito Font License (SIL OFL-1.1)",
+      "file_type": "concept",
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/engines/hyperframes/fonts/Nunito-OFL.txt",
+      "source_location": "L1-L10",
+      "source_url": null,
+      "captured_at": null,
+      "author": "The Nunito Project Authors",
+      "contributor": null
+    },
+    {
+      "id": "engines_hyperframes_fonts_spacegrotesk_ofl_license",
+      "label": "Space Grotesk Font License (SIL OFL-1.1)",
+      "file_type": "concept",
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/engines/hyperframes/fonts/SpaceGrotesk-OFL.txt",
+      "source_location": "L1-L10",
+      "source_url": null,
+      "captured_at": null,
+      "author": "The Space Grotesk Project Authors",
+      "contributor": null
+    },
+    {
+      "id": "infrastructure_cloud_readme_cloud_control_plane",
+      "label": "Cloud Control Plane Infrastructure",
+      "file_type": "document",
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/infrastructure/cloud/README.md",
+      "source_location": "L1-L5",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "infrastructure_cloud_readme_vercel_control_plane",
+      "label": "Vercel Control Plane (apps/web)",
+      "file_type": "concept",
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/infrastructure/cloud/README.md",
+      "source_location": "L3",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "infrastructure_cloud_readme_supabase_database",
+      "label": "Supabase Database (packages/database, 0001_initial_schema.sql)",
+      "file_type": "concept",
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/infrastructure/cloud/README.md",
+      "source_location": "L4",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "infrastructure_cloud_readme_cloudflare_r2",
+      "label": "Cloudflare R2 Private Bucket (youbellkey-media)",
+      "file_type": "concept",
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/infrastructure/cloud/README.md",
+      "source_location": "L5",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "infrastructure_database_readme_migration_runbook",
+      "label": "Database Migrations & Backup Runbook",
+      "file_type": "document",
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/infrastructure/database/README.md",
+      "source_location": "L1-L5",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "infrastructure_database_readme_workspace_rls_rule",
+      "label": "Mandatory workspace_id & RLS Policy Rule",
+      "file_type": "rationale",
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/infrastructure/database/README.md",
+      "source_location": "L4",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "infrastructure_local_readme_local_pc_worker",
+      "label": "Local PC Worker Setup (V1)",
+      "file_type": "document",
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/infrastructure/local/README.md",
+      "source_location": "L1-L6",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "infrastructure_local_readme_worker_prerequisites",
+      "label": "Local Worker Prerequisites (Node.js >= 22, ffmpeg, Outbound HTTPS)",
+      "file_type": "concept",
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/infrastructure/local/README.md",
+      "source_location": "L3-L6",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "infrastructure_monitoring_readme_observability_baseline",
+      "label": "Monitoring & Observability Baseline",
+      "file_type": "document",
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/infrastructure/monitoring/README.md",
+      "source_location": "L1-L5",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "infrastructure_monitoring_readme_heartbeat_lease_ttl",
+      "label": "Worker Heartbeat (30s) & Lease TTL (120s)",
+      "file_type": "concept",
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/infrastructure/monitoring/README.md",
+      "source_location": "L4",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "infrastructure_monitoring_readme_secret_redaction",
+      "label": "Structured Log Secret Redaction (API Key, Worker Token, OAuth Refresh Token)",
+      "file_type": "rationale",
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/infrastructure/monitoring/README.md",
+      "source_location": "L5",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "workers_cloud_worker_readme_cloud_worker",
+      "label": "Cloud Worker (Docker / Linux-ARM64 Deployment Target)",
+      "file_type": "document",
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/workers/cloud-worker/README.md",
+      "source_location": "L1-L5",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "workers_cloud_worker_readme_worker_dockerfile",
+      "label": "Universal Worker Container (worker.Dockerfile / Oracle Ampere A1)",
+      "file_type": "concept",
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/workers/cloud-worker/README.md",
+      "source_location": "L3-L5",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "agents_skills_yb_architect_skill_yb_architect",
+      "target": "agents_skills_yb_architect_skill_hybrid_ringan_constraints",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-architect/SKILL.md",
+      "source_location": "L15-L20",
+      "weight": 1.0
+    },
+    {
+      "source": "agents_skills_yb_architect_skill_hybrid_ringan_constraints",
+      "target": "infrastructure_cloud_readme_cloud_control_plane",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-architect/SKILL.md",
+      "source_location": "L16-L19",
+      "weight": 1.0
+    },
+    {
+      "source": "agents_skills_yb_architect_skill_hybrid_ringan_constraints",
+      "target": "infrastructure_database_readme_workspace_rls_rule",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-architect/SKILL.md",
+      "source_location": "L18",
+      "weight": 1.0
+    },
+    {
+      "source": "agents_skills_yb_license_auditor_skill_yb_license_auditor",
+      "target": "agents_skills_yb_license_auditor_skill_license_tiers",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-license-auditor/SKILL.md",
+      "source_location": "L16-L22",
+      "weight": 1.0
+    },
+    {
+      "source": "agents_skills_yb_license_auditor_skill_yb_license_auditor",
+      "target": "engines_hyperframes_fonts_bebasneue_ofl_license",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-license-auditor/SKILL.md",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "agents_skills_yb_license_auditor_skill_yb_license_auditor",
+      "target": "engines_hyperframes_fonts_inter_ofl_license",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-license-auditor/SKILL.md",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "agents_skills_yb_license_auditor_skill_yb_license_auditor",
+      "target": "engines_hyperframes_fonts_jetbrainsmono_ofl_license",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-license-auditor/SKILL.md",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "agents_skills_yb_license_auditor_skill_yb_license_auditor",
+      "target": "engines_hyperframes_fonts_nunito_ofl_license",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-license-auditor/SKILL.md",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "agents_skills_yb_license_auditor_skill_yb_license_auditor",
+      "target": "engines_hyperframes_fonts_spacegrotesk_ofl_license",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-license-auditor/SKILL.md",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "agents_skills_yb_originality_auditor_skill_yb_originality_auditor",
+      "target": "agents_skills_yb_originality_auditor_skill_originality_verdict",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-originality-auditor/SKILL.md",
+      "source_location": "L14-L20",
+      "weight": 1.0
+    },
+    {
+      "source": "agents_skills_yb_originality_auditor_skill_originality_verdict",
+      "target": "agents_skills_yb_video_director_skill_yb_video_document_tracks",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.75,
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-originality-auditor/SKILL.md",
+      "source_location": "L15-L20",
+      "weight": 1.0
+    },
+    {
+      "source": "agents_skills_yb_publishing_auditor_skill_yb_publishing_auditor",
+      "target": "agents_skills_yb_publishing_auditor_skill_pre_publish_guardrails",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-publishing-auditor/SKILL.md",
+      "source_location": "L13-L18",
+      "weight": 1.0
+    },
+    {
+      "source": "agents_skills_yb_publishing_auditor_skill_pre_publish_guardrails",
+      "target": "agents_skills_yb_worker_reliability_skill_atomic_job_lease",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-publishing-auditor/SKILL.md",
+      "source_location": "L14-L18",
+      "weight": 1.0
+    },
+    {
+      "source": "agents_skills_yb_render_engineer_skill_yb_render_engineer",
+      "target": "agents_skills_yb_render_engineer_skill_hyperframes_render_rules",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-render-engineer/SKILL.md",
+      "source_location": "L13-L17",
+      "weight": 1.0
+    },
+    {
+      "source": "agents_skills_yb_render_engineer_skill_hyperframes_render_rules",
+      "target": "infrastructure_local_readme_worker_prerequisites",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-render-engineer/SKILL.md",
+      "source_location": "L17",
+      "weight": 1.0
+    },
+    {
+      "source": "agents_skills_yb_security_auditor_skill_yb_security_auditor",
+      "target": "agents_skills_yb_security_auditor_skill_security_boundaries",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-security-auditor/SKILL.md",
+      "source_location": "L13-L18",
+      "weight": 1.0
+    },
+    {
+      "source": "agents_skills_yb_security_auditor_skill_security_boundaries",
+      "target": "infrastructure_database_readme_workspace_rls_rule",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-security-auditor/SKILL.md",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "agents_skills_yb_security_auditor_skill_security_boundaries",
+      "target": "infrastructure_monitoring_readme_secret_redaction",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-security-auditor/SKILL.md",
+      "source_location": "L15",
+      "weight": 1.0
+    },
+    {
+      "source": "agents_skills_yb_security_auditor_skill_security_boundaries",
+      "target": "agents_skills_yb_video_director_skill_yb_video_document_tracks",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-security-auditor/SKILL.md",
+      "source_location": "L17",
+      "weight": 1.0
+    },
+    {
+      "source": "agents_skills_yb_test_engineer_skill_yb_test_engineer",
+      "target": "agents_skills_yb_test_engineer_skill_vitest_standards",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-test-engineer/SKILL.md",
+      "source_location": "L13-L20",
+      "weight": 1.0
+    },
+    {
+      "source": "agents_skills_yb_test_engineer_skill_vitest_standards",
+      "target": "agents_skills_yb_license_auditor_skill_license_tiers",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-test-engineer/SKILL.md",
+      "source_location": "L19",
+      "weight": 1.0
+    },
+    {
+      "source": "agents_skills_yb_test_engineer_skill_vitest_standards",
+      "target": "agents_skills_yb_originality_auditor_skill_originality_verdict",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-test-engineer/SKILL.md",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "agents_skills_yb_test_engineer_skill_vitest_standards",
+      "target": "agents_skills_yb_publishing_auditor_skill_pre_publish_guardrails",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-test-engineer/SKILL.md",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "agents_skills_yb_video_director_skill_yb_video_director",
+      "target": "agents_skills_yb_video_director_skill_yb_video_document_tracks",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-video-director/SKILL.md",
+      "source_location": "L13-L19",
+      "weight": 1.0
+    },
+    {
+      "source": "agents_skills_yb_video_director_skill_yb_video_document_tracks",
+      "target": "agents_skills_yb_render_engineer_skill_hyperframes_render_rules",
+      "relation": "shares_data_with",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-video-director/SKILL.md",
+      "source_location": "L11-L19",
+      "weight": 1.0
+    },
+    {
+      "source": "agents_skills_yb_worker_reliability_skill_yb_worker_reliability",
+      "target": "agents_skills_yb_worker_reliability_skill_atomic_job_lease",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-worker-reliability/SKILL.md",
+      "source_location": "L13-L17",
+      "weight": 1.0
+    },
+    {
+      "source": "agents_skills_yb_worker_reliability_skill_atomic_job_lease",
+      "target": "infrastructure_monitoring_readme_heartbeat_lease_ttl",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-worker-reliability/SKILL.md",
+      "source_location": "L16-L17",
+      "weight": 1.0
+    },
+    {
+      "source": "agents_skills_yb_worker_reliability_skill_yb_worker_reliability",
+      "target": "workers_cloud_worker_readme_cloud_worker",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-worker-reliability/SKILL.md",
+      "source_location": "L4-L5",
+      "weight": 1.0
+    },
+    {
+      "source": "infrastructure_cloud_readme_cloud_control_plane",
+      "target": "infrastructure_cloud_readme_vercel_control_plane",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/infrastructure/cloud/README.md",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "infrastructure_cloud_readme_cloud_control_plane",
+      "target": "infrastructure_cloud_readme_supabase_database",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/infrastructure/cloud/README.md",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "infrastructure_cloud_readme_cloud_control_plane",
+      "target": "infrastructure_cloud_readme_cloudflare_r2",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/infrastructure/cloud/README.md",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "infrastructure_database_readme_migration_runbook",
+      "target": "infrastructure_database_readme_workspace_rls_rule",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/infrastructure/database/README.md",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "infrastructure_database_readme_migration_runbook",
+      "target": "infrastructure_cloud_readme_supabase_database",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/infrastructure/database/README.md",
+      "source_location": "L3-L5",
+      "weight": 1.0
+    },
+    {
+      "source": "infrastructure_local_readme_local_pc_worker",
+      "target": "infrastructure_local_readme_worker_prerequisites",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/infrastructure/local/README.md",
+      "source_location": "L3-L6",
+      "weight": 1.0
+    },
+    {
+      "source": "infrastructure_local_readme_worker_prerequisites",
+      "target": "infrastructure_cloud_readme_vercel_control_plane",
+      "relation": "shares_data_with",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/infrastructure/local/README.md",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "infrastructure_local_readme_worker_prerequisites",
+      "target": "infrastructure_cloud_readme_cloudflare_r2",
+      "relation": "shares_data_with",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/infrastructure/local/README.md",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "infrastructure_monitoring_readme_observability_baseline",
+      "target": "infrastructure_monitoring_readme_heartbeat_lease_ttl",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/infrastructure/monitoring/README.md",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "infrastructure_monitoring_readme_observability_baseline",
+      "target": "infrastructure_monitoring_readme_secret_redaction",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/infrastructure/monitoring/README.md",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "infrastructure_monitoring_readme_observability_baseline",
+      "target": "infrastructure_cloud_readme_vercel_control_plane",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/infrastructure/monitoring/README.md",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "workers_cloud_worker_readme_cloud_worker",
+      "target": "workers_cloud_worker_readme_worker_dockerfile",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/workers/cloud-worker/README.md",
+      "source_location": "L3-L5",
+      "weight": 1.0
+    },
+    {
+      "source": "workers_cloud_worker_readme_worker_dockerfile",
+      "target": "infrastructure_local_readme_local_pc_worker",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/workers/cloud-worker/README.md",
+      "source_location": "L3-L5",
+      "weight": 1.0
+    },
+    {
+      "source": "engines_hyperframes_fonts_bebasneue_ofl_license",
+      "target": "engines_hyperframes_fonts_inter_ofl_license",
+      "relation": "semantically_similar_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/engines/hyperframes/fonts/BebasNeue-OFL.txt",
+      "source_location": "L3-L10",
+      "weight": 1.0
+    },
+    {
+      "source": "engines_hyperframes_fonts_jetbrainsmono_ofl_license",
+      "target": "engines_hyperframes_fonts_nunito_ofl_license",
+      "relation": "semantically_similar_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/engines/hyperframes/fonts/JetBrainsMono-OFL.txt",
+      "source_location": "L3-L10",
+      "weight": 1.0
+    },
+    {
+      "source": "engines_hyperframes_fonts_nunito_ofl_license",
+      "target": "engines_hyperframes_fonts_spacegrotesk_ofl_license",
+      "relation": "semantically_similar_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/engines/hyperframes/fonts/Nunito-OFL.txt",
+      "source_location": "L3-L10",
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": [
+    {
+      "id": "agents_skills_yb_architect_skill_hyperedge_skills_governance",
+      "label": "Youbellkey Studio Domain Skills Governance",
+      "nodes": [
+        "agents_skills_yb_architect_skill_yb_architect",
+        "agents_skills_yb_license_auditor_skill_yb_license_auditor",
+        "agents_skills_yb_originality_auditor_skill_yb_originality_auditor",
+        "agents_skills_yb_publishing_auditor_skill_yb_publishing_auditor",
+        "agents_skills_yb_render_engineer_skill_yb_render_engineer",
+        "agents_skills_yb_security_auditor_skill_yb_security_auditor",
+        "agents_skills_yb_test_engineer_skill_yb_test_engineer",
+        "agents_skills_yb_video_director_skill_yb_video_director",
+        "agents_skills_yb_worker_reliability_skill_yb_worker_reliability"
+      ],
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-architect/SKILL.md"
+    },
+    {
+      "id": "engines_hyperframes_fonts_bebasneue_ofl_hyperedge_sil_ofl_fonts",
+      "label": "HyperFrames Bundled SIL OFL-1.1 Font Families",
+      "nodes": [
+        "engines_hyperframes_fonts_bebasneue_ofl_license",
+        "engines_hyperframes_fonts_inter_ofl_license",
+        "engines_hyperframes_fonts_jetbrainsmono_ofl_license",
+        "engines_hyperframes_fonts_nunito_ofl_license",
+        "engines_hyperframes_fonts_spacegrotesk_ofl_license"
+      ],
+      "relation": "semantically_similar_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/engines/hyperframes/fonts/BebasNeue-OFL.txt"
+    },
+    {
+      "id": "infrastructure_cloud_readme_hyperedge_hybrid_ringan_topology",
+      "label": "Hybrid Ringan Infrastructure & Worker Deployment Topology",
+      "nodes": [
+        "infrastructure_cloud_readme_cloud_control_plane",
+        "infrastructure_database_readme_migration_runbook",
+        "infrastructure_local_readme_local_pc_worker",
+        "infrastructure_monitoring_readme_observability_baseline",
+        "workers_cloud_worker_readme_cloud_worker"
+      ],
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "/home/youbellkey/Documents/Youbellkey-Creator-Engine/infrastructure/cloud/README.md"
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0,
+  "coverage": {
+    "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-architect/SKILL.md": 21,
+    "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-license-auditor/SKILL.md": 22,
+    "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-originality-auditor/SKILL.md": 20,
+    "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-publishing-auditor/SKILL.md": 18,
+    "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-render-engineer/SKILL.md": 17,
+    "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-security-auditor/SKILL.md": 18,
+    "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-test-engineer/SKILL.md": 20,
+    "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-video-director/SKILL.md": 19,
+    "/home/youbellkey/Documents/Youbellkey-Creator-Engine/.agents/skills/yb-worker-reliability/SKILL.md": 17,
+    "/home/youbellkey/Documents/Youbellkey-Creator-Engine/engines/hyperframes/fonts/BebasNeue-OFL.txt": 93,
+    "/home/youbellkey/Documents/Youbellkey-Creator-Engine/engines/hyperframes/fonts/Inter-OFL.txt": 93,
+    "/home/youbellkey/Documents/Youbellkey-Creator-Engine/engines/hyperframes/fonts/JetBrainsMono-OFL.txt": 93,
+    "/home/youbellkey/Documents/Youbellkey-Creator-Engine/engines/hyperframes/fonts/Nunito-OFL.txt": 93,
+    "/home/youbellkey/Documents/Youbellkey-Creator-Engine/engines/hyperframes/fonts/SpaceGrotesk-OFL.txt": 93,
+    "/home/youbellkey/Documents/Youbellkey-Creator-Engine/infrastructure/cloud/README.md": 5,
+    "/home/youbellkey/Documents/Youbellkey-Creator-Engine/infrastructure/database/README.md": 5,
+    "/home/youbellkey/Documents/Youbellkey-Creator-Engine/infrastructure/local/README.md": 6,
+    "/home/youbellkey/Documents/Youbellkey-Creator-Engine/infrastructure/monitoring/README.md": 5,
+    "/home/youbellkey/Documents/Youbellkey-Creator-Engine/workers/cloud-worker/README.md": 5
+  }
+}

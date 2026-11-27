@@ -1,0 +1,1 @@
+{"nodes": [{"id": "docs_adr_0003", "label": "ADR-0003: TS AI Gateway", "file_type": "document", "source_file": "docs/ADR/0003-ts-ai-gateway-free-tts-whisper.md", "rationale": "Decision for native TypeScript AI integration and free TTS/Whisper pipeline.", "_origin": "semantic"}], "edges": [], "hyperedges": []}

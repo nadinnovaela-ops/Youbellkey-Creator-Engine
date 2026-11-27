@@ -106,8 +106,12 @@ export async function executeRenderPipeline(
 
     for (let i = 0; i < doc.scenes.length; i++) {
       const scene = doc.scenes[i]!;
+      // Progress per-scene: TTS (10-45%), progress dipancarkan SEBELUM dan SESUDAH
+      // setiap scene agar heartbeat interval 15s selalu mendapat update terbaru
+      // bahkan saat Gemini image generation (yang bisa >30 detik per scene) sedang berlangsung.
+      const sceneProgressPct = 10 + Math.round((i / doc.scenes.length) * 35);
       await options.onProgress?.(
-        10 + Math.round((i / doc.scenes.length) * 35),
+        sceneProgressPct,
         `Menyiapkan audio & caption scene ${i + 1}/${doc.scenes.length}`,
       );
 
@@ -147,6 +151,12 @@ export async function executeRenderPipeline(
 
       // 3. Jalur B Visual asset generation if ai-image layer
       if (scene.backgroundLayer.kind === 'ai-image') {
+        // Kirim progress mid-scene sebelum Gemini image call yang bisa lama (>30 detik)
+        // Ini memastikan heartbeat mendapat lastProgress terbaru untuk memperpanjang lease
+        await options.onProgress?.(
+          sceneProgressPct,
+          `Generating visual AI scene ${i + 1}/${doc.scenes.length}`,
+        );
         const asset = await generateSceneVisualAsset({
           prompt: scene.backgroundLayer.prompt,
           sceneIndex: i,
@@ -166,11 +176,28 @@ export async function executeRenderPipeline(
         wordCaptions: alignment.wordCaptions,
       });
       currentOffset += sceneDuration;
+      // Kirim progress SETELAH scene selesai agar heartbeat punya data terbaru
+      await options.onProgress?.(
+        10 + Math.round(((i + 1) / doc.scenes.length) * 35),
+        `Scene ${i + 1}/${doc.scenes.length} selesai`,
+      );
     }
 
     await options.onProgress?.(50, 'Menggabungkan track voiceover & menyusun komposisi HyperFrames');
     const combinedMp3Path = path.join(audioDir, 'voiceover.mp3');
-    await concatAudioSegmentsToMp3(segmentWavPaths, combinedMp3Path);
+    const sceneDurationsSeconds = updatedScenes.map((s) => s.durationSeconds);
+    const sfxCues: Array<{ timestampSeconds: number; kind: 'whoosh' | 'pop' | 'riser' }> = [];
+    let sfxCursor = 0;
+    for (let idx = 0; idx < updatedScenes.length; idx++) {
+      if (idx > 0) {
+        sfxCues.push({ timestampSeconds: Number(sfxCursor.toFixed(2)), kind: idx % 3 === 0 ? 'riser' : 'whoosh' });
+      }
+      sfxCursor += updatedScenes[idx]!.durationSeconds;
+    }
+    await concatAudioSegmentsToMp3(segmentWavPaths, combinedMp3Path, {
+      sceneDurationsSeconds,
+      sfxCues,
+    });
 
     const updatedDocument: YBVideoDocument = YBVideoDocumentSchema.parse({
       ...doc,
